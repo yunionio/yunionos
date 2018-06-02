@@ -1,0 +1,21 @@
+#!/bin/sh
+# vi: ts=4 noexpandtab
+#
+# This is the initramfs init script
+
+mkdir -p /proc /dev /tmp
+
+mount -t tmpfs -o size=64k,mode=0755 tmpfs /dev
+mkdir /dev/pts
+mount -t devpts devpts /dev/pts
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+
+mount -o remount,rw /
+mkdir -p /dev/shm
+mount -a
+
+hostname -F /etc/hostname
+
+exec /sbin/init "$@"

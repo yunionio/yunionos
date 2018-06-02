@@ -1,0 +1,59 @@
+#!/bin/sh
+
+install_master() {
+    echo "Install Yunion Cloud Master ..."
+    /lib/yunion/install.sh controller
+}
+
+install_kvm() {
+    echo "Install Yunion Cloud KVM host ..."
+    /lib/yunion/install.sh host
+}
+
+install_kubelet() {
+    echo "Install Yunion Cloud Kubelet host ..."
+    /lib/yunion/install.sh host
+}
+
+start_shell() {
+    echo "Start a shell ..."
+    /bin/sh
+}
+
+install() {
+    for tok in $(cat /proc/cmdline)
+    do
+        export $tok
+    done
+
+    case "$role" in
+        master)
+            install_master
+            ;;
+        kvm)
+            install_kvm
+            ;;
+        kubelet)
+            install_kubelet
+            ;;
+        shell)
+            start_shell
+            ;;
+        *)
+            echo "Unknown installation role $role, give up ..."
+            exit 1
+    esac
+}
+
+case "$1" in
+    start)
+        install
+        ;;
+    stop|restart|reload)
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?

@@ -1,0 +1,114 @@
+MEGA_MOD=megaraid_sas
+HPSSA_MOD=hpsa
+SAS2_MOD=mpt2sas
+SAS3_MOD=mpt3sas
+
+MEGA_CMD=/opt/MegaRAID/MegaCli/MegaCli64
+HPSSA_CMD=/opt/hp/hpssacli/bld/hpssacli
+SAS2_CMD=/opt/lsi/sas2ircu
+SAS3_CMD=/opt/lsi/sas3ircu
+
+mod_exists() {
+  lsmod | grep -w $1
+}
+
+mega_detect() {
+  if mod_exists $MEGA_MOD; then
+    $MEGA_CMD -PDList -aALL | grep ^Adapter
+  else
+    return 1
+  fi
+}
+
+hpssa_detect() {
+  if mod_exists $HPSSA_MOD; then
+    $HPSSA_MOD controller all show
+  else
+    return 1
+  fi
+}
+
+sas2_detect() {
+  if mod_exists $SAS2_MOD; then
+    $SAS2_MOD LIST
+  else
+    return 1
+  fi
+}
+
+sas3_detect() {
+  if mod_exists $SAS3_MOD; then
+    $SAS3_MOD LIST
+  else
+    return 1
+  fi
+}
+
+
+detect_raid() {
+  if mega_detect; then
+    echo "MegaRaid"
+  elif hpssa_detect; then
+    echo "HPSARaid"
+  elif sas2_detect; then
+    echo "Mpt2SAS"
+  elif sas3_detect; then
+    echo "Mpt3SAS"
+  else
+    echo "Linux"
+  fi
+}
+
+genpasswd() {
+  local l=$1
+  [ "$l" == "" ] && l=16
+  tr -dc A-Za-z0-9 < /dev/urandom | head -c ${l} | xargs
+}
+
+build_raid() {
+  case $1 in
+    "MegaRaid")
+        if megaraid_build $2; then
+            return 0
+        else
+            return 1
+        fi
+        ;;
+    "HPSARaid")
+        if hpsaraid_build $2; then
+            return 0
+        else
+            return 1
+        fi
+        ;;
+    "Mpt2SAS")
+        if mpt2sas_build $2; then
+            return 0
+        else
+            return 1
+        fi
+        ;;
+    "Mpt3SAS")
+        if mpt3sas_build $2; then
+            return 0
+        else
+            return 1
+        fi
+        ;;
+    *)
+        return 1;
+  esac
+}
+
+megaraid_build() {
+  
+}
+
+hpsaraid_build() {
+}
+
+mpt2sas_build() {
+}
+
+mpt3sas_build() {
+}

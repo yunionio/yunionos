@@ -1,0 +1,33 @@
+#!/bin/sh
+
+genpasswd() {
+        local l=$1
+        [ "$l" == "" ] && l=16
+        tr -dc A-Za-z0-9 < /dev/urandom | head -c ${l} | xargs
+}
+
+change_root_passwd() {
+echo "Init root password..."
+
+PASS=$(genpasswd)
+
+echo $PASS > /tmp/passwd
+
+passwd root << EOF
+$PASS
+$PASS
+EOF
+}
+
+case "$1" in
+    start)
+        change_root_passwd
+        ;;
+    stop|restart|reload)
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?

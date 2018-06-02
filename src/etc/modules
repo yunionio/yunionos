@@ -1,0 +1,38 @@
+acpiphp
+ext4
+xfs
+vfat
+sd_mod
+ipmi_msghandler
+ipmi_devintf
+ipmi_si
+usbhid
+megaraid_sas
+mpt3sas
+mpt2sas
+mptsas
+mptctl
+cciss cciss_allow_hpsa=1
+hpsa hpsa_allow_any=1
+ixgbe allow_unsupported_sfp=1
+igb
+e1000
+e1000e
+tg3
+bnx2
+virtio_net
+virtio_scsi
+virtio_pci
+virtio_ring
+virtio_blk
+virtio
+#ip_tables
+cdrom
+sr_mod
+ahci
+isofs
+mptspi
+nvme
+i40e
+sg
+usb-storage

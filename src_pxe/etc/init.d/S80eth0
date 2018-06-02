@@ -1,0 +1,27 @@
+#!/bin/sh
+
+case "$1" in
+    start)
+        for i in $(seq 3)
+        do
+            for dev in $(ls /sys/class/net)
+            do
+                if [ "$dev" != "lo" ]; then
+                    echo "Initialize $dev ..."
+                    TRIES=12
+                    /sbin/udhcpc -t $TRIES -T 3 -n -i $dev
+                    if [ "$?" -eq "0" ]; then
+                        exit 0
+                    fi
+                fi
+            done
+        done
+        ;;
+    stop|restart|reload)
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?

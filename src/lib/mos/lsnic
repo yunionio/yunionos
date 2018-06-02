@@ -1,0 +1,29 @@
+#!/bin/sh
+
+SYSPATH=/sys/class/net
+
+show_dev() {
+    local DEV=$1
+    local SPEED=$(cat $SYSPATH/$DEV/speed 2>/dev/null)
+    if [ -z "$SPEED" ]; then
+        SPEED="0"
+    fi
+    local CARRIER=$(cat $SYSPATH/$DEV/carrier)
+    local MAC=$(cat $SYSPATH/$DEV/address)
+    local MTU=$(cat $SYSPATH/$DEV/mtu)
+    echo $DEV $MAC $SPEED $CARRIER $MTU
+}
+
+for dev in $(ls $SYSPATH)
+do
+    if [ -d $SYSPATH/$dev/device ]; then
+        OPSTAT=$(cat $SYSPATH/$dev/operstate)
+        if [ "$OPSTAT" != "up" ]; then
+            /sbin/ifconfig $dev up
+        fi
+        OPSTAT=$(cat $SYSPATH/$dev/operstate)
+        if [ -z "$1" ] || [ "$1" == "$OPSTAT" ]; then
+            show_dev $dev
+        fi
+    fi
+done

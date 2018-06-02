@@ -1,0 +1,150 @@
+#!/bin/sh
+# vi: ts=4 noexpandtab
+# load modules
+
+LOADFILE=/tmp/loaded_modules
+echo -n "" > $LOADFILE
+
+do_load() {
+    MOD=$1
+    if ! grep "##$MOD" $LOADFILE > /dev/null; then
+        echo "Load $MOD ..."
+        echo "##$@" >> $LOADFILE
+        modprobe $@
+    fi
+}
+
+try_load_module() {
+    local MOD=$1
+    local ALIAS_CNT=$(modinfo $MOD | grep "^alias:" | wc -l)
+    # echo -n "Try $MOD ... "
+    if [ "$ALIAS_CNT" -eq "0" ]; then # not a device driver, load anyway
+        do_load $@
+        return
+    fi
+    NEED_LOAD=
+    for ALIAS in $(modinfo $MOD | grep "^alias:" | awk '{print $2}')
+    do
+        case "$ALIAS" in
+            pci*)
+                break
+                ;;
+            usb*)
+                break
+                ;;
+            *)
+                NEED_LOAD="1"
+                break
+                ;;
+        esac
+    done
+    if [ -n "$NEED_LOAD" ]; then # other bus than pci and usb, load anyway
+        do_load $@
+        return
+    fi
+    # echo "skip"
+    return
+}
+
+is_module_match() {
+    ALIAS=$1
+    MLEN=$2
+    MOD=$3
+    for a in $(modinfo $MOD | grep "^alias:" | awk '{print $2}')
+    do
+        a=${a%%\**}
+        if [ -n "$MLEN" ]; then
+            a=${a:0:$MLEN}
+        fi
+        if [ "${ALIAS:0:${#a}}" == "$a" ]; then
+            echo ${#a}
+        fi
+    done
+    echo ""
+}
+
+load_match_module() {
+    local SUBSYS=$1
+    local ALIAS=$2
+    local MLEN=$3
+    local MATCH_LEN=
+    local MATCH_MOD=
+    while read line; do
+        line="${line%%#*}"
+        [ -n "$line" ] || continue
+        if grep "$line" $LOADFILE > /dev/null; then
+            continue
+        fi
+        if [ -z "$MLEN" ]; then
+            EMLEN=${#ALIAS}
+        else
+            EMLEN=$(($MLEN+${#SUBSYS}+1))
+        fi
+        EMLEN=$(is_module_match $ALIAS $EMLEN $line)
+        if [ -n "$EMLEN" ]; then
+            if [ -z "$MATCH_LEN" ] || [ "$MATCH_LEN" -lt "$EMLEN" ]; then
+                MATCH_LEN="$EMLEN"
+                MATCH_MOD="$line"
+                # echo "Find match driver $MATCH_MOD $MATCH_LEN"
+            fi
+        fi
+    done < /etc/modules
+    if [ -n "$MATCH_MOD" ]; then
+        do_load "$MATCH_MOD"
+    fi
+}
+
+load_drivers() {
+    local SUBSYS=$1
+    local MLEN=$2
+    # echo "Load $SUBSYS modules with match len $MLEN ..."
+    local TMP=/tmp/devices
+    echo -n "" >  $TMP
+    local DEVICES=/sys/bus/$SUBSYS/devices
+    for i in $(ls $DEVICES)
+    do
+        local ALIAS_FILE="$DEVICES/$i/modalias"
+        local DRIVER_PATH="$DEVICES/$i/driver"
+        if [ -f "$ALIAS_FILE" ] && [ ! -L "$DRIVER_PATH" ]; then
+            cat $ALIAS_FILE >> $TMP
+        fi
+    done
+    for i in $(cat $TMP | sort | uniq)
+    do
+        load_match_module $SUBSYS $i $MLEN
+    done
+}
+
+load_pci_drivers() {
+    load_drivers pci
+    load_drivers pci 18
+    load_drivers pci 17
+}
+
+load_usb_drivers() {
+    load_drivers usb
+    load_drivers usb 18
+    load_drivers usb 17
+}
+
+case "$1" in
+    start)
+        if [ -f /etc/modules ]; then
+            [ -d "/lib/modules/$(uname -r)" ] || exit 0
+            while read line; do
+                line="${line%%#*}"
+                [ -n "$line" ] || continue
+                try_load_module $line
+            done < /etc/modules
+            load_pci_drivers
+            load_usb_drivers
+        fi
+        ;;
+    stop|restart|reload)
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?

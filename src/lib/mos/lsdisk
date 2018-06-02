@@ -1,0 +1,23 @@
+#!/bin/sh
+
+SYSPATH=/sys/block
+
+show_dev() {
+    local DEV=$1
+    local SIZE=$(cat $SYSPATH/$DEV/size)
+    local VENDOR=$(cat $SYSPATH/$DEV/device/vendor)
+    local MODEL=$(cat $SYSPATH/$DEV/device/model)
+    local REV=$(cat $SYSPATH/$DEV/device/rev)
+    local ROTATE=$(cat $SYSPATH/$DEV/queue/rotational)
+    echo $DEV $SIZE $ROTATE $VENDOR $MODEL $REV
+}
+
+for dev in $(ls $SYSPATH)
+do
+    if [ -d $SYSPATH/$dev/device ]; then
+        REMOVABLE=$(cat $SYSPATH/$dev/removable)
+        if [ "$REMOVABLE" -eq "0" ]; then
+            show_dev $dev
+        fi
+    fi
+done
