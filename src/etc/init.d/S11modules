@@ -10,13 +10,7 @@ do_load() {
     MOD=$1
     if ! is_loaded $MOD; then
         echo "Load $MOD ..."
-        local CONF="/etc/modprobe.d/${MOD}.conf"
-        local OPTION=""
-        if [ -f $CONF ]; then
-            OPTION=$(cat $CONF | grep -v ^# | head -n 1)
-        fi
-        rmmod $MOD > /dev/null 2>&1
-        modprobe $MOD $OPTION
+        modprobe $MOD
     fi
 }
 
