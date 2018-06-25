@@ -15,6 +15,7 @@ do_load() {
         if [ -f $CONF ]; then
             OPTION=$(cat $CONF | grep -v ^# | head -n 1)
         fi
+        rmmod $MOD > /dev/null 2>&1
         modprobe $MOD $OPTION
     fi
 }
@@ -78,9 +79,9 @@ find_match_module() {
   do
     if [ -n "$MATCH" ]; then
       do_load $a
-	  echo $MATCH $a
+      # echo $MATCH $a
       MATCH=
-	elif [ "${a:0:${#SUBSYS}}" == "$SUBSYS" ]; then
+    elif [ "${a:0:${#SUBSYS}}" == "$SUBSYS" ]; then
       a=${a%%\**}
       if [ -n "$MLEN" ]; then
         a=${a:0:$MLEN}
