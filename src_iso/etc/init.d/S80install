@@ -17,7 +17,7 @@ install_kubelet() {
 
 start_shell() {
     echo "Start a shell ..."
-    /bin/sh
+    /bin/sh -i
 }
 
 install() {

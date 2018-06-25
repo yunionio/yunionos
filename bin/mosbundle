@@ -153,6 +153,8 @@ if [ ! -x "${kernel_d}/lib/modules/${kver}/modules.builtin" ]; then
     touch "${kernel_d}/lib/modules/${kver}/modules.builtin"
 fi
 
+if [ "$src_type_in" == "pxe" ]; then
+
 mdep="${kernel_d}/lib/modules/${kver}/modules.dep"
 for x in ${MODULES}; do
 	grep -q "/${x}.ko" "${mdep}" ||
@@ -169,6 +171,13 @@ for x in ${MODULES}; do
 	}' mat="/${x}.ko$" p="lib/modules/${kver}" "${mdep}"
 done > "${kern_modules}"
 sort -u "${kern_modules}" > "${kern_files}"
+
+else
+
+find ${kernel_d}/lib/modules/${kver}/ -type f | sed "s|${kernel_d}/||" | grep -e "\.ko$" | sort -u > "${kern_files}"
+
+fi
+
 vmlinuz=$( cd "${kernel_d}" && [ -f boot/vmlinuz-* ] &&
 	echo boot/vmlinuz-* ) && echo "${vmlinuz}" >> "${kern_files}" &&
 	ln -sf "$vmlinuz" "$kernel_d/vmlinuz" && echo "vmlinuz" >> "$kern_files" ||
