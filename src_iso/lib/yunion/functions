@@ -101,14 +101,17 @@ build_raid() {
 }
 
 megaraid_build() {
-  
+  echo "Megaraid build $1 ..."
 }
 
 hpsaraid_build() {
+  echo "HpSAraid build $1 ..."
 }
 
 mpt2sas_build() {
+  echo "MPT2SAS build $1 ..."
 }
 
 mpt3sas_build() {
+  echo "MPT3SAS build $1 ..."
 }
