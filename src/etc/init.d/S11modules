@@ -2,15 +2,15 @@
 # vi: ts=4 noexpandtab
 # load modules
 
-LOADFILE=/tmp/loaded_modules
-echo -n "" > $LOADFILE
+is_loaded() {
+    lsmod | grep -w "$1" > /dev/null
+}
 
 do_load() {
     MOD=$1
-    if ! grep "##$MOD" $LOADFILE > /dev/null; then
+    if ! is_loaded $MOD; then
         echo "Load $MOD ..."
-        echo "##$@" >> $LOADFILE
-        modprobe $@
+        modprobe $MOD
     fi
 }
 
@@ -19,7 +19,7 @@ try_load_module() {
     local ALIAS_CNT=$(modinfo $MOD | grep "^alias:" | wc -l)
     # echo -n "Try $MOD ... "
     if [ "$ALIAS_CNT" -eq "0" ]; then # not a device driver, load anyway
-        do_load $@
+        do_load $MOD
         return
     fi
     NEED_LOAD=
@@ -39,7 +39,7 @@ try_load_module() {
         esac
     done
     if [ -n "$NEED_LOAD" ]; then # other bus than pci and usb, load anyway
-        do_load $@
+        do_load $MOD
         return
     fi
     # echo "skip"
@@ -61,6 +61,31 @@ is_module_match() {
         fi
     done
     echo ""
+}
+
+find_match_module() {
+  SUBSYS=$1
+  ALIAS=$2
+  MLEN=$3
+  local MATCH=
+  # echo "Find match module for $SUBSYS $ALIAS"
+  for a in $(grep "^alias $SUBSYS:" /lib/modules/`uname -r`/modules.alias)
+  do
+    if [ -n "$MATCH" ]; then
+      do_load $a
+      # echo $MATCH $a
+      MATCH=
+    elif [ "${a:0:${#SUBSYS}}" == "$SUBSYS" ]; then
+      a=${a%%\**}
+      if [ -n "$MLEN" ]; then
+        a=${a:0:$MLEN}
+      fi
+      if [ ${#a} -gt 17 ] && [ "${ALIAS:0:${#a}}" == "$a" ]; then
+        MATCH=$a
+        # echo ${#a} $a
+      fi
+    fi
+  done
 }
 
 load_match_module() {
@@ -111,20 +136,21 @@ load_drivers() {
     done
     for i in $(cat $TMP | sort | uniq)
     do
-        load_match_module $SUBSYS $i $MLEN
+        # load_match_module $SUBSYS $i $MLEN
+        find_match_module $SUBSYS $i $MLEN
     done
 }
 
 load_pci_drivers() {
     load_drivers pci
-    load_drivers pci 18
-    load_drivers pci 17
+    load_drivers pci 21
+    load_drivers pci 20
 }
 
 load_usb_drivers() {
     load_drivers usb
-    load_drivers usb 18
-    load_drivers usb 17
+    load_drivers usb 21
+    load_drivers usb 20
 }
 
 case "$1" in
@@ -146,5 +172,6 @@ case "$1" in
         echo "Usage: $0 {start}"
         exit 1
 esac
+
 
 exit $?

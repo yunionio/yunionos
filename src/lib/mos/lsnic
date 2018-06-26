@@ -20,6 +20,7 @@ do
         OPSTAT=$(cat $SYSPATH/$dev/operstate)
         if [ "$OPSTAT" != "up" ]; then
             /sbin/ifconfig $dev up
+            sleep 10
         fi
         OPSTAT=$(cat $SYSPATH/$dev/operstate)
         if [ -z "$1" ] || [ "$1" == "$OPSTAT" ]; then

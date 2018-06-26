@@ -12,9 +12,9 @@ mpt3sas
 mpt2sas
 mptsas
 mptctl
-cciss cciss_allow_hpsa=1
-hpsa hpsa_allow_any=1
-ixgbe allow_unsupported_sfp=1
+cciss
+hpsa
+ixgbe
 igb
 e1000
 e1000e
@@ -35,4 +35,4 @@ mptspi
 nvme
 i40e
 sg
-usb-storage
+# usb-storage
