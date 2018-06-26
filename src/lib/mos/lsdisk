@@ -2,22 +2,130 @@
 
 SYSPATH=/sys/block
 
+error() {
+    echo "$@" 1>&2
+}
+
+fail() {
+    [ $# -eq 0 ] || error "$@"
+    exit 1
+}
+
+usage() {
+    cat <<EOF
+Usage: ${0##*/} [-p|--pcie] [-s|--scsi] [-h|--help]
+
+List scsi or pcie block device, default to list all of them.
+
+Examples:
+    # List all of block devices
+    ${0##*/}
+
+    # List scsi block devices
+    ${0##*/} --scsi
+
+    # List pcie block devices
+    ${0##*/} --pcie
+
+    # Show help info
+    ${0##*/} --help
+EOF
+}
+
+bad_usage() {
+    usage 1>&2
+    fail "$@"
+}
+
 show_dev() {
     local DEV=$1
+    local IS_SHANNON=$2
     local SIZE=$(cat $SYSPATH/$DEV/size)
-    local VENDOR=$(cat $SYSPATH/$DEV/device/vendor)
-    local MODEL=$(cat $SYSPATH/$DEV/device/model)
-    local REV=$(cat $SYSPATH/$DEV/device/rev)
+    # vendor maybe not exist
+    local VENDOR=$(cat $SYSPATH/$DEV/device/vendor 2>/dev/null)
+    local MODEL_PATH=
+    if [ "x$IS_SHANNON" == "xtrue" ]; then
+        MODEL_PATH="$SYSPATH/$DEV/shannon/model"
+    else
+        MODEL_PATH="$SYSPATH/$DEV/device/model"
+    fi
+    local MODEL=$(cat $MODEL_PATH)
+    # rev maybe not exist
+    local REV=$(cat $SYSPATH/$DEV/device/rev 2>/dev/null)
     local ROTATE=$(cat $SYSPATH/$DEV/queue/rotational)
     echo $DEV $SIZE $ROTATE $VENDOR $MODEL $REV
 }
 
-for dev in $(ls $SYSPATH)
-do
-    if [ -d $SYSPATH/$dev/device ]; then
-        REMOVABLE=$(cat $SYSPATH/$dev/removable)
-        if [ "$REMOVABLE" -eq "0" ]; then
-            show_dev $dev
+show_devs() {
+    for dev in $@
+    do
+        if [ -d $SYSPATH/$dev/device ]; then
+            REMOVABLE=$(cat $SYSPATH/$dev/removable)
+            if [ "$REMOVABLE" -eq "0" ]; then
+                    show_dev $dev
+            fi
         fi
-    fi
+    done
+}
+
+show_scsi_devs() {
+    show_devs $(ls $SYSPATH | grep ^sd)
+}
+
+show_nvme_devs() {
+    local devs=$(/opt/nvme-cli/nvme list | awk \
+        'NR > 2 {split($1, a, "/dev/"); print a[2]}')
+    show_devs $devs
+}
+
+show_shannon_devs() {
+    local devs=$(/bin/shannon-status -l | awk \
+        '{split($2, a, "/dev/"); print a[2]}')
+    for dev in $devs
+    do
+        if [ -d $SYSPATH/$dev/shannon ]; then
+            REMOVABLE=$(cat $SYSPATH/$dev/removable)
+            if [ "$REMOVABLE" -eq "0" ]; then
+                    show_dev $dev "true"
+            fi
+        fi
+    done
+}
+
+show_pcie_devs() {
+    # shannon and nvme module devices
+    show_shannon_devs
+    show_nvme_devs
+}
+
+show_all_devs() {
+    show_scsi_devs
+    show_pcie_devs
+}
+
+short_opts="psh"
+long_opts="pcie,scsi,help"
+getopt_out=$(getopt --name "${0##*/}" \
+    --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+    eval set -- "${getopt_out}" ||
+    bad_usage
+
+if [ $# -eq 1 ]; then
+    show_all_devs
+    exit 0
+fi
+
+while [ $# -ne 0 ]; do
+    cur=${1}; next=${2};
+    case "$cur" in
+        -h|--help) usage; exit 0;;
+        -s|--scsi) show_scsi_devs; exit 0;;
+        -p|--pcie) show_pcie_devs; exit 0;;
+        --) shift; break;;
+        *) bad_usage;
+    esac
+    shift;
 done
+
+# other args should not accept
+bad_usage

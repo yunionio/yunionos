@@ -13,7 +13,7 @@ if [ -z "$IMGID" ]; then
     exit 1
 fi
 
-DISK=$(lsdisk | head -n 1 | awk '{print $1}')
+DISK=$(lsdisk --scsi | head -n 1 | awk '{print $1}')
 
 if [ -z "$DISK" ]; then
     exit 1

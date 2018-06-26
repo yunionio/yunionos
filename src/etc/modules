@@ -33,6 +33,7 @@ ahci
 isofs
 mptspi
 nvme
+shannon
 i40e
 sg
 usb-storage

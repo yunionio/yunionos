@@ -1,0 +1,294 @@
+#!/bin/bash
+
+##########################################################################################
+#		    Bug report script for Direct-IO PCIe Flashs				 #
+#		     Copyright (C) 2012 Shannon Systems, Inc.				 #
+#			    gaoyan@mail.shannon-data.com				 #
+##########################################################################################
+
+#
+# ------------------------------------------------------------------------
+# bugreport is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# bugreport is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with bugreport.  If not, see <http://www.gnu.org/licenses/>.
+# ------------------------------------------------------------------------
+
+# Check parameters
+if [ $# -gt 1 ]
+then
+	echo "usage: shannon-bugreport [options]"
+	echo ""
+	echo "options:"
+	echo "  -p	also dump history messages from /var/log/"
+	exit 0
+fi
+dump_history_messages="$1"
+
+# Check root privilege
+if [ $UID != "0" ]
+then
+	echo "Error: Need root privilege to run this script."
+	exit 1
+fi
+
+# Prepare log directory
+time_stamp=`date +%Y%m%d-%H%M%S`
+log_dir="/tmp/shannon-bugreport-${time_stamp}"
+mkdir -p ${log_dir} && cd ${log_dir}
+rm -rf *
+
+os_type=`uname -s`-`uname -r`
+echo $HOSTNAME
+echo $os_type
+
+copy_files()
+{
+	local dest="$1"
+	shift
+
+	if [ $# -eq 0 ]
+	then
+		local files=""
+	else
+		local files="$@"
+	fi
+
+	mkdir -p "$dest"
+	echo -n "Copying files into $dest..."
+	cp -pRP $files "$dest"/ &> /dev/null
+	echo "   done."
+}
+
+dump_cmd_output()
+{
+	local dest="$1"
+	shift
+	local cmd="$1"
+	shift
+
+	if [ "$#" = "0" ]
+	then
+		args=""
+	else
+		args="$@"
+	fi
+
+	local file_name=$(echo "$cmd $args" | sed -e 's/\\/_/g;s/\*/_/g;s/ /_/g;s/\//_/g;s/_*$//')
+	mkdir -p "$dest"
+	echo -n "Dumping $cmd $args..."
+	"$cmd" $args &> "$dest/$file_name"
+	echo "   done."
+}
+
+
+
+# dump kernel config
+if [[ -e /lib/modules/$(uname -r)/build/.config ]]
+then
+	copy_files system /lib/modules/$(uname -r)/build/.config
+else
+	if [[ -e /usr/src/kernel/$(uname -r )/.config ]]
+	then
+		copy_files system /usr/src/kernel/$(uname -r)/.config ${logDir}/config
+	fi
+fi
+copy_files system /etc/issue
+copy_files system /etc/*release
+
+# dump /proc files
+copy_files proc \
+	/proc/buddyinfo \
+	/proc/cgroups \
+	/proc/cmdline \
+	/proc/config* \
+	/proc/cpuinfo \
+	/proc/devices \
+	/proc/diskstats \
+	/proc/dma \
+	/proc/drbd \
+	/proc/filesystems \
+	/proc/interrupts \
+	/proc/iomem \
+	/proc/ioports \
+	/proc/kallsyms \
+	/proc/locks \
+	/proc/mdstat \
+	/proc/meminfo \
+	/proc/misc \
+	/proc/modules \
+	/proc/mounts \
+	/proc/mtrr \
+	/proc/pagetypeinfo \
+	/proc/partitions \
+	/proc/sched_debug \
+	/proc/schedstat \
+	/proc/slabinfo \
+	/proc/softirqs \
+	/proc/stat \
+	/proc/swaps \
+	/proc/timer_list \
+	/proc/timer_stats \
+	/proc/uptime \
+	/proc/version_signature \
+	/proc/vmallocinfo \
+	/proc/version \
+	/proc/vmstat \
+	/proc/zoneinfo \
+	/proc/sys \
+	/proc/irq \
+	/proc/bus \
+	/proc/fs \
+	/proc/net \
+	/proc/scsi \
+	/proc/sysvipc \
+	/proc/flashcache
+
+copy_files proc/self \
+	/proc/self/mounts \
+	/proc/self/net
+
+
+# dump logs
+copy_files log /var/log/kern.log
+if [[ -z "$dump_history_messages" ]]
+then
+	copy_files log /var/log/messages
+else
+	copy_files log /var/log/messages*
+fi
+copy_files log /var/log/syslog
+copy_files log /var/log/warn
+dump_cmd_output log dmesg
+
+# dump /sys
+copy_files sys /sys/block
+copy_files sys /sys/bus
+copy_files sys /sys/module
+copy_files sys /sys/fs
+copy_files sys/devices/virtual /sys/devices/virtual/block
+#copy_files sys /sys/df*
+
+# dump system information
+dump_cmd_output system lspci -vvvvv
+dump_cmd_output system lspci -t
+dump_cmd_output system modinfo shannon
+dump_cmd_output system uname -a
+dump_cmd_output system hostname
+dump_cmd_output system ps aux
+dump_cmd_output system ps aux --sort start_time
+dump_cmd_output system pstree
+dump_cmd_output system lsof
+dump_cmd_output system w
+dump_cmd_output system lsmod
+dump_cmd_output system dmidecode
+
+# dump performance information
+#copy_files perf /var/log/sysstat
+#copy_files perf /var/log/sa
+dump_cmd_output perf sar -A
+dump_cmd_output perf sar -r
+dump_cmd_output perf sar
+dump_cmd_output perf iostat -dmx 1 5
+dump_cmd_output perf vmstat 1 5
+dump_cmd_output perf top -bc -d1 -n5
+
+
+# dump disk information
+copy_files disk /etc/mdadm/mdadm.conf /etc/mdadm.conf
+copy_files disk /etc/fstab /etc/mtab
+dump_cmd_output disk df -h
+dump_cmd_output disk pvs
+dump_cmd_output disk vgs
+dump_cmd_output disk lvs
+dump_cmd_output disk dmsetup table
+dump_cmd_output disk dmsetup status
+
+which shannon-status &> /dev/null
+if [[ $? == 0 ]]
+then
+	echo -n "Gathering information using shannon-status..."
+	shannon-status -a > disk/shannon-status
+	echo "   done."
+
+	for emulate_cdev in /dev/fct*
+	do
+		shannon-status ${emulate_cdev}
+		echo "------------------------------------------------------------------------"
+	done > disk/shannon-status-fio
+fi
+
+for shannon_bdev in /dev/df*
+do
+	if [[ -e ${shannon_bdev} ]]
+	then
+		echo "------------------------------------------------------------------------"
+		echo "${shannon_bdev}:"
+		fuser -v ${shannon_bdev} 2>&1
+	fi
+done > disk/fuser-df
+
+for shannon_bdev in /dev/fio*
+do
+	if [[ -e ${shannon_bdev} ]]
+	then
+		echo "------------------------------------------------------------------------"
+		echo "${shannon_bdev}:"
+		fuser -v ${shannon_bdev} 2>&1
+	fi
+done > disk/fuser-fio
+
+# NUMA information
+dump_cmd_output numa numactl --hardware
+dump_cmd_output numa numactl --show
+dump_cmd_output numa numastat
+
+# debugfs
+debug_fs=$(mount | grep debugfs | head -n1 | awk '{print $3}')
+
+if [[ -z "${debug_fs}" ]]
+then
+	debug_fs=/tmp/shannon-bugreport-debugfs-${time_stamp}
+	mkdir ${debug_fs}
+	mount -t debugfs debugfs ${debug_fs}
+fi
+
+copy_files debug ${debug_fs}/df*
+copy_files debug ${debug_fs}/fio*
+
+if [[ -e /tmp/shannon-bugreport-debugfs-${time_stamp} ]]
+then
+	umount /tmp/shannon-bugreport-debugfs-${time_stamp}
+	rm -rf /tmp/shannon-bugreport-debugfs-${time_stamp}
+fi
+
+#crash
+if [[ -d /var/crash ]]
+then
+	for node in /var/crash/*
+	do
+		if [[ -d ${node} && -e ${node}/vmcore-dmesg.txt ]]
+		then
+			copy_files crash/${node##*/} ${node}/vmcore-dmesg.txt
+		fi
+	done
+fi
+
+echo
+echo "Building tarball..."
+cd /tmp
+chmod -R u+w shannon-bugreport-${time_stamp}
+tar czf shannon-bugreport-${time_stamp}.tar.gz shannon-bugreport-${time_stamp} &> /dev/null
+
+echo
+echo " Tarball: /tmp/shannon-bugreport-${time_stamp}.tar.gz"
+echo " Plz send it to our customer service, including steps to reproduce the problem."
+echo " All the information would help us address the issue tremendously."
