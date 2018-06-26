@@ -20,7 +20,7 @@ Usage: ${0##*/} rootfs.tar kpkg.deb output_dir
    [re]Bundle a buildroot rootfs into a mini-cloud image
 
    Example:
-    ${0##*/} rootfs.tar linux-image-*-virtuaal*.deb build-output/
+    ${0##*/} [-e EXTRA_MODULES_DIR] rootfs.tar linux-image-*-virtuaal*.deb build-output/
 EOF
 }
 bad_Usage() { Usage 1>&2; fail "$@"; }
@@ -32,7 +32,7 @@ xrsync() {
 	rsync --archive --xattrs --hard-links --acls --sparse "$@"
 }
 
-short_opts="hv"
+short_opts="hve:"
 long_opts="initrd-busybox:,help,verbose"
 getopt_out=$(getopt --name "${0##*/}" \
 	--options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -46,10 +46,14 @@ while [ $# -ne 0 ]; do
 	case "$cur" in
 		-h|--help) Usage; exit 0;;
 		-v|--verbose) DEBUG=$((${DEBUG}+1));;
+		-e) extra_modules_in="$next";;
 		--) shift; break;;
 	esac
 	shift;
 done
+
+extra_modules_dir=$(readlink -f "$extra_modules_in")
+[ -d "$extra_modules_dir"  ] || bad_Usage "Extra modules dir: '$extra_modules_dir' not exists"
 
 [ $# -ge 3 ] || bad_Usage "must give rootfs.tar, kernel pkg, out_dir, src_type{pxe|iso}"
 rootfs_in=${1}
@@ -140,6 +144,10 @@ done
 	fail "failed to find kernel version. no lib/modules/* ?"
 
 echo "Kernel version $kver"
+dst_mod_dir="${kernel_d}/lib/modules/${kver}/extra"
+echo "Copy $extra_modules_dir to $dst_mod_dir"
+cp $extra_modules_dir/**/*.ko $dst_mod_dir ||
+	fail "failed to copy extract modules to $dst_mod_dir"
 
 find ${kernel_d} -type f -name '*.ko.xz' | xargs xz -d
 
