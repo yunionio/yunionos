@@ -1,0 +1,33 @@
+#!/bin/bash
+
+
+UTILS_DIR=`dirname $0`
+# Check parameters
+if [ $# -ne 1 ]
+then
+	echo "usage: shannon-eject /dev/scta"
+	exit 0
+fi
+
+# Check root privilege
+if [ $UID != "0" ]
+then
+	echo "Error: Need root privilege to run this script."
+	exit 1
+fi
+
+$UTILS_DIR/shannon-detach -e $1
+if [ $? -ne 0 ]
+then
+	exit 1
+fi
+
+printf "Please wait ..."
+while [ -e $1 ]
+do
+	printf "."
+	sleep 1
+done
+echo " Done"
+echo "You can plug out the PCIe flash card safely now."
+
