@@ -20,7 +20,16 @@ do
         OPSTAT=$(cat $SYSPATH/$dev/operstate)
         if [ "$OPSTAT" != "up" ]; then
             /sbin/ifconfig $dev up
-            sleep 10
+            MAXWAIT=30
+            WAITED=0
+            while [ "$WAITED" -lt "$MAXWAIT" ]; do
+                OPSTAT=$(cat $SYSPATH/$dev/operstate)
+                if [ $OPSTAT == 'up' ]; then
+                    break
+                else
+                    WAITED=$((WAITED+1))
+                fi
+            done
         fi
         OPSTAT=$(cat $SYSPATH/$dev/operstate)
         if [ -z "$1" ] || [ "$1" == "$OPSTAT" ]; then
