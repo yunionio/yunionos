@@ -102,6 +102,7 @@ build_raid() {
 
 megaraid_build() {
   echo "Megaraid build $1 ..."
+  /lib/yunion/megactl.sh $1
 }
 
 hpsaraid_build() {

@@ -34,7 +34,7 @@ echo "Prepare disk ..."
 RAID=$(detect_raid)
 echo "Disk raid driver $RAID"
 if [ "$RAID" == "Linux" ]; then
-  DISK=$(/lib/mos/lsdisk | head -n 1 | awk '{print $1}')
+  DISK=$(/lib/mos/lsdisk --scsi | head -n 1 | awk '{print $1}')
   if [ -z "$DISK" ]; then
     echo "No valid disk found, exiting..."
     exit 1
@@ -43,16 +43,16 @@ if [ "$RAID" == "Linux" ]; then
 else
   echo "RAID controller $RAID detected, please specify RAID level:"
   echo "[RAID0] RAID0 - No redundancy"
-  echo "[RAID1] RAID1 or RAID10 - Full redundancy"
+  echo "[RAID10] RAID1 or RAID10 - 100% redundancy"
   echo "[RIAD5] RAID5 - 1/N redundancy, where N is the number of disks"
   RAIDCONF=
   while [ -z $RAIDCONF ]; do
-    echo -n "Please input RAID0, RAID1 or RAID5(default is [RAID1], i.e. RAID1 or RAID10): "
+    echo -n "Please input RAID0, RAID10 or RAID5 (default is [RAID10], i.e. RAID1 or RAID10): "
     read RAIDCONF
     if [ -z $RAIDCONF ]; then
-      RAIDCONF="RAID1"
+      RAIDCONF="RAID10"
     fi
-    if [ "$RAIDCONF" != "RAID0" ] && [ "$RAIDCONF" != "RAID1" ] && [ "$RAIDCONF" != "RAID5" ]; then
+    if [ "$RAIDCONF" != "RAID0" ] && [ "$RAIDCONF" != "RAID10" ] && [ "$RAIDCONF" != "RAID5" ]; then
       echo "Invalid RAID level: $RAIDCONF"
       RAIDCONF=
     fi
@@ -63,7 +63,7 @@ fi
 echo "Prepare network ..."
 NIC_CNT=$(/lib/mos/lsnic up | wc -l)
 if [ "$NIC_CNT" -eq "0" ]; then
-  echo "Not active nic found"
+  echo "No active nic found"
   exit 1
 fi
 
@@ -312,8 +312,8 @@ done
 
 
 if [ "$RAID" != "Linux" ]; then
-  echo "Going to configure $RAID disks with ${RAIDCONFIG} ..."
-  if ! build_raid $RAID $RAIDCONFIG; then
+  echo "Going to configure $RAID disks with ${RAIDCONF} ..."
+  if ! build_raid $RAID $RAIDCONF; then
      echo "Build raid failed, exiting ..."
      exit 1
   fi
@@ -333,13 +333,27 @@ if [ "$RAID" != "Linux" ]; then
 fi
 
 
-echo "Mounting ISO ..."
+echo "Mounting installation medium ..."
 
-mount /dev/sr0 /mnt
+CDROM=
 
-if [ "$?" -ne "0" ]; then
-  echo "Fail to mount ISO"
-  exit 1
+for dev in $(/lib/mos/lsdisk --removable | awk '{print $1}')
+do
+    echo "Try mouting /dev/$dev ..."
+    mount /dev/$dev /mnt
+    if [ "$?" -eq "0" ]; then
+        if [ -d /mnt/images ]; then
+            CDROM=$dev
+            break
+        else
+            umount /mnt
+        fi
+    fi
+done
+
+if [ -z "$CDROM" ]; then
+    echo "No installation medium found, exiting ..."
+    exit 1
 fi
 
 IMAGE=$(ls /mnt/images | tail -n 1)

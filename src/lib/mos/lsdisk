@@ -13,7 +13,7 @@ fail() {
 
 usage() {
     cat <<EOF
-Usage: ${0##*/} [-p|--pcie] [-s|--scsi] [-h|--help]
+Usage: ${0##*/} [-p|--pcie] [-s|--scsi] [-h|--help] [-r|--removable]
 
 List scsi or pcie block device, default to list all of them.
 
@@ -26,6 +26,9 @@ Examples:
 
     # List pcie block devices
     ${0##*/} --pcie
+
+    # List removable devices
+    ${0##*/} --removable
 
     # Show help info
     ${0##*/} --help
@@ -54,6 +57,18 @@ show_dev() {
     local REV=$(cat $SYSPATH/$DEV/device/rev 2>/dev/null)
     local ROTATE=$(cat $SYSPATH/$DEV/queue/rotational)
     echo $DEV $SIZE $ROTATE $VENDOR $MODEL $REV
+}
+
+show_removable_devs() {
+    for dev in $(ls $SYSPATH)
+    do
+        if [ -d $SYSPATH/$dev/device ]; then
+            REMOVABLE=$(cat $SYSPATH/$dev/removable)
+            if [ "$REMOVABLE" -eq "1" ]; then
+                    show_dev $dev
+            fi
+        fi
+    done
 }
 
 show_devs() {
@@ -103,8 +118,8 @@ show_all_devs() {
     show_pcie_devs
 }
 
-short_opts="psh"
-long_opts="pcie,scsi,help"
+short_opts="psrh"
+long_opts="pcie,scsi,removable,help"
 getopt_out=$(getopt --name "${0##*/}" \
     --options "${short_opts}" --long "${long_opts}" -- "$@") &&
     eval set -- "${getopt_out}" ||
@@ -121,6 +136,7 @@ while [ $# -ne 0 ]; do
         -h|--help) usage; exit 0;;
         -s|--scsi) show_scsi_devs; exit 0;;
         -p|--pcie) show_pcie_devs; exit 0;;
+        -r|--removable) show_removable_devs; exit 0;;
         --) shift; break;;
         *) bad_usage;
     esac

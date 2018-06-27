@@ -27,6 +27,7 @@ do
                 if [ $OPSTAT == 'up' ]; then
                     break
                 else
+                    sleep 1
                     WAITED=$((WAITED+1))
                 fi
             done
