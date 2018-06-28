@@ -79,7 +79,8 @@ _build_raid10() {
     DISKS="$DISKS -Array$IDX[$arr]"
     IDX=$((IDX+1))
   done
-  $TOOL -CfgLdAdd -r10 $DISKS -a$ADAPT
+  echo $TOOL -CfgSpanAdd -r10 $DISKS -a$ADAPT
+  $TOOL -CfgSpanAdd -r10 $DISKS -a$ADAPT
 }
 
 _build_raid1() {
@@ -113,6 +114,7 @@ _build_raid() {
     fi
     DISKS="${DISKS}${pv}"
   done
+  echo $TOOL -CfgLdAdd -r$LEVEL [$DISKS] -a$ADAPT
   $TOOL -CfgLdAdd -r$LEVEL [$DISKS] -a$ADAPT
 }
 

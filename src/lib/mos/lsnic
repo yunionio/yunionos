@@ -1,5 +1,39 @@
 #!/bin/sh
 
+usage() {
+    cat <<EOF
+Usage: ${0##*/} [-n|--nowait] [-h|--help] [status_filter]
+
+List nics, defualt to list all nics
+
+EOF
+}
+
+bad_usage() {
+    usage 1>&2
+    fail "$@"
+}
+
+short_opts="nh"
+long_opts="nowait,help"
+getopt_out=$(getopt --name "${0##*/}" \
+    --options "${short_opts}" --long "${long_opts}" -- "$@") &&
+    eval set -- "${getopt_out}" ||
+    bad_usage
+
+NOWAIT=
+
+while [ $# -ne 0 ]; do
+    cur=${1}; next=${2};
+    case "$cur" in
+        -h|--help) usage; exit 0;;
+        -n|--nowait) NOWAIT="yes";;
+        --) shift; break;;
+        *) bad_usage;
+    esac
+    shift;
+done
+
 SYSPATH=/sys/class/net
 
 show_dev() {
@@ -20,17 +54,19 @@ do
         OPSTAT=$(cat $SYSPATH/$dev/operstate)
         if [ "$OPSTAT" != "up" ]; then
             /sbin/ifconfig $dev up
-            MAXWAIT=30
-            WAITED=0
-            while [ "$WAITED" -lt "$MAXWAIT" ]; do
-                OPSTAT=$(cat $SYSPATH/$dev/operstate)
-                if [ $OPSTAT == 'up' ]; then
-                    break
-                else
-                    sleep 1
-                    WAITED=$((WAITED+1))
-                fi
-            done
+            if [ "$NOWAIT" != "yes" ]; then
+                MAXWAIT=10
+                WAITED=0
+                while [ "$WAITED" -lt "$MAXWAIT" ]; do
+                    OPSTAT=$(cat $SYSPATH/$dev/operstate)
+                    if [ $OPSTAT == 'up' ]; then
+                        break
+                    else
+                        sleep 1
+                        WAITED=$((WAITED+1))
+                    fi
+                done
+            fi
         fi
         OPSTAT=$(cat $SYSPATH/$dev/operstate)
         if [ -z "$1" ] || [ "$1" == "$OPSTAT" ]; then

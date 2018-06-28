@@ -20,7 +20,7 @@ Usage: ${0##*/} rootfs.tar kpkg.deb output_dir
    [re]Bundle a buildroot rootfs into a mini-cloud image
 
    Example:
-    ${0##*/} [-e EXTRA_MODULES_DIR] [-f firmware.rpm] rootfs.tar linux-image-*-virtuaal*.deb build-output/
+    ${0##*/} [-e EXTRA_MODULES_DIR] rootfs.tar linux-image-*-virtuaal*.deb build-output/
 EOF
 }
 bad_Usage() { Usage 1>&2; fail "$@"; }

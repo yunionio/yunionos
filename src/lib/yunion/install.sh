@@ -74,7 +74,7 @@ if [ "$NIC_CNT" -gt "1" ]; then
   read do_binding
   if [ "$do_binding" == "yes" ]; then
     BONDING="yes"
-    ALLNIC=$(/lib/mos/lsnic up | awk '{print $1}' | xargs)
+    ALLNIC=$(/lib/mos/lsnic -n up | awk '{print $1}' | xargs)
     NIC=
     while [ -z $NIC ]; do
       echo "Please input all interfaces to be included in bond ($ALLNIC):"
@@ -87,15 +87,15 @@ if [ "$NIC_CNT" -gt "1" ]; then
           NIC="$NIC $n"
         fi
       done
-      NIC_CNT=$(echo $NIC | awk '{print NF}')
+      NIC_CNT=$(echo "$NIC" | awk '{print NF}')
       if [ "$NIC_CNT" -lt 2 ]; then
         echo "Binding needs at least two slave interfaces"
         NIC=
       fi
     done
   else
-    ALLNIC=$(/lib/mos/lsnic up | awk '{print $1}' | xargs)
-    echo -n "Input interface name to be activate($ALLNIC): "
+    ALLNIC=$(/lib/mos/lsnic -n up | awk '{print $1}' | xargs)
+    echo -n "Input interface name to be activate ($ALLNIC): "
     NIC=
     while [ -z "$NIC" ]; do
       read NIC
@@ -106,7 +106,7 @@ if [ "$NIC_CNT" -gt "1" ]; then
     done
   fi
 else
-  NIC=$(/lib/mos/lsnic up | head -n 1 | awk '{print $1}')
+  NIC=$(/lib/mos/lsnic -n up | head -n 1 | awk '{print $1}')
 fi
 
 IP=
@@ -116,7 +116,7 @@ while [ -z "$IP" ]; do
 done
 
 DEFAULT_MASK=255.255.255.0
-echo -n "Netmask(Default is $DEFAULT_MASK): "
+echo -n "Netmask (default is $DEFAULT_MASK): "
 read MASK
 if [ -z "$MASK" ]; then
   MASK=$DEFAULT_MASK
@@ -235,7 +235,7 @@ echo "Storage settings:"
 if [ "$RAID" == "Linux" ]; then
   echo "  Disk to install: $DISK"
 else
-  echo "  Raid level: $RAIDCONF"
+  echo "  Raid driver: $RAID Raid level: $RAIDCONF"
 fi
 
 echo ""
@@ -402,7 +402,9 @@ echo "OS configuration ..."
 
 echo "fstab configuration ..."
 
-echo "/dev/${DISK}${DATAIDX}    /opt/cloud/workspace    ext4    defaults    1   1" >> $ROOTFS/etc/fstab
+UUID=$(blkid /dev/${DISK}${DATAIDX})
+UUID=${UUID:1:36}
+echo "UUID=${UUID}    /opt/cloud/workspace    ext4    defaults    1   1" >> $ROOTFS/etc/fstab
 
 echo "Network configuration ..."
 
@@ -419,7 +421,7 @@ do
   echo "" > $f
 done
 
-for n in $(/lib/mos/lsnic | awk '{print $1}')
+for n in $(/lib/mos/lsnic -n | awk '{print $1}')
 do
   MAC=$(cat /sys/class/net/$n/address)
   echo "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"$MAC\", NAME=\"$n\"" >> $ROOTFS/etc/udev/rules.d/70-persistent-net.rules
