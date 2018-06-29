@@ -34,7 +34,7 @@ echo "Prepare disk ..."
 RAID=$(detect_raid)
 echo "Disk raid driver $RAID"
 if [ "$RAID" == "Linux" ]; then
-  DISK=$(/lib/mos/lsdisk | head -n 1 | awk '{print $1}')
+  DISK=$(/lib/mos/lsdisk --scsi | head -n 1 | awk '{print $1}')
   if [ -z "$DISK" ]; then
     echo "No valid disk found, exiting..."
     exit 1
@@ -43,16 +43,16 @@ if [ "$RAID" == "Linux" ]; then
 else
   echo "RAID controller $RAID detected, please specify RAID level:"
   echo "[RAID0] RAID0 - No redundancy"
-  echo "[RAID1] RAID1 or RAID10 - Full redundancy"
+  echo "[RAID10] RAID1 or RAID10 - 100% redundancy"
   echo "[RIAD5] RAID5 - 1/N redundancy, where N is the number of disks"
   RAIDCONF=
   while [ -z $RAIDCONF ]; do
-    echo -n "Please input RAID0, RAID1 or RAID5(default is [RAID1], i.e. RAID1 or RAID10): "
+    echo -n "Please input RAID0, RAID10 or RAID5 (default is [RAID10], i.e. RAID1 or RAID10): "
     read RAIDCONF
     if [ -z $RAIDCONF ]; then
-      RAIDCONF="RAID1"
+      RAIDCONF="RAID10"
     fi
-    if [ "$RAIDCONF" != "RAID0" ] && [ "$RAIDCONF" != "RAID1" ] && [ "$RAIDCONF" != "RAID5" ]; then
+    if [ "$RAIDCONF" != "RAID0" ] && [ "$RAIDCONF" != "RAID10" ] && [ "$RAIDCONF" != "RAID5" ]; then
       echo "Invalid RAID level: $RAIDCONF"
       RAIDCONF=
     fi
@@ -63,7 +63,7 @@ fi
 echo "Prepare network ..."
 NIC_CNT=$(/lib/mos/lsnic up | wc -l)
 if [ "$NIC_CNT" -eq "0" ]; then
-  echo "Not active nic found"
+  echo "No active nic found"
   exit 1
 fi
 
@@ -74,7 +74,7 @@ if [ "$NIC_CNT" -gt "1" ]; then
   read do_binding
   if [ "$do_binding" == "yes" ]; then
     BONDING="yes"
-    ALLNIC=$(/lib/mos/lsnic up | awk '{print $1}' | xargs)
+    ALLNIC=$(/lib/mos/lsnic -n up | awk '{print $1}' | xargs)
     NIC=
     while [ -z $NIC ]; do
       echo "Please input all interfaces to be included in bond ($ALLNIC):"
@@ -87,15 +87,15 @@ if [ "$NIC_CNT" -gt "1" ]; then
           NIC="$NIC $n"
         fi
       done
-      NIC_CNT=$(echo $NIC | awk '{print NF}')
+      NIC_CNT=$(echo "$NIC" | awk '{print NF}')
       if [ "$NIC_CNT" -lt 2 ]; then
         echo "Binding needs at least two slave interfaces"
         NIC=
       fi
     done
   else
-    ALLNIC=$(/lib/mos/lsnic up | awk '{print $1}' | xargs)
-    echo -n "Input interface name to be activate($ALLNIC): "
+    ALLNIC=$(/lib/mos/lsnic -n up | awk '{print $1}' | xargs)
+    echo -n "Input interface name to be activate ($ALLNIC): "
     NIC=
     while [ -z "$NIC" ]; do
       read NIC
@@ -106,7 +106,7 @@ if [ "$NIC_CNT" -gt "1" ]; then
     done
   fi
 else
-  NIC=$(/lib/mos/lsnic up | head -n 1 | awk '{print $1}')
+  NIC=$(/lib/mos/lsnic -n up | head -n 1 | awk '{print $1}')
 fi
 
 IP=
@@ -116,7 +116,7 @@ while [ -z "$IP" ]; do
 done
 
 DEFAULT_MASK=255.255.255.0
-echo -n "Netmask(Default is $DEFAULT_MASK): "
+echo -n "Netmask (default is $DEFAULT_MASK): "
 read MASK
 if [ -z "$MASK" ]; then
   MASK=$DEFAULT_MASK
@@ -235,7 +235,7 @@ echo "Storage settings:"
 if [ "$RAID" == "Linux" ]; then
   echo "  Disk to install: $DISK"
 else
-  echo "  Raid level: $RAIDCONF"
+  echo "  Raid driver: $RAID Raid level: $RAIDCONF"
 fi
 
 echo ""
@@ -312,8 +312,8 @@ done
 
 
 if [ "$RAID" != "Linux" ]; then
-  echo "Going to configure $RAID disks with ${RAIDCONFIG} ..."
-  if ! build_raid $RAID $RAIDCONFIG; then
+  echo "Going to configure $RAID disks with ${RAIDCONF} ..."
+  if ! build_raid $RAID $RAIDCONF; then
      echo "Build raid failed, exiting ..."
      exit 1
   fi
@@ -333,13 +333,27 @@ if [ "$RAID" != "Linux" ]; then
 fi
 
 
-echo "Mounting ISO ..."
+echo "Mounting installation medium ..."
 
-mount /dev/sr0 /mnt
+CDROM=
 
-if [ "$?" -ne "0" ]; then
-  echo "Fail to mount ISO"
-  exit 1
+for dev in $(/lib/mos/lsdisk --removable | awk '{print $1}')
+do
+    echo "Try mouting /dev/$dev ..."
+    mount /dev/$dev /mnt
+    if [ "$?" -eq "0" ]; then
+        if [ -d /mnt/images ]; then
+            CDROM=$dev
+            break
+        else
+            umount /mnt
+        fi
+    fi
+done
+
+if [ -z "$CDROM" ]; then
+    echo "No installation medium found, exiting ..."
+    exit 1
 fi
 
 IMAGE=$(ls /mnt/images | tail -n 1)
@@ -388,7 +402,9 @@ echo "OS configuration ..."
 
 echo "fstab configuration ..."
 
-echo "/dev/${DISK}${DATAIDX}    /opt/cloud/workspace    ext4    defaults    1   1" >> $ROOTFS/etc/fstab
+UUID=$(blkid /dev/${DISK}${DATAIDX})
+UUID=${UUID:1:36}
+echo "UUID=${UUID}    /opt/cloud/workspace    ext4    defaults    1   1" >> $ROOTFS/etc/fstab
 
 echo "Network configuration ..."
 
@@ -405,7 +421,7 @@ do
   echo "" > $f
 done
 
-for n in $(/lib/mos/lsnic | awk '{print $1}')
+for n in $(/lib/mos/lsnic -n | awk '{print $1}')
 do
   MAC=$(cat /sys/class/net/$n/address)
   echo "SUBSYSTEM==\"net\", ACTION==\"add\", DRIVERS==\"?*\", ATTR{address}==\"$MAC\", NAME=\"$n\"" >> $ROOTFS/etc/udev/rules.d/70-persistent-net.rules

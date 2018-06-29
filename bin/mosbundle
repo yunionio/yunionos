@@ -32,7 +32,7 @@ xrsync() {
 	rsync --archive --xattrs --hard-links --acls --sparse "$@"
 }
 
-short_opts="hve:"
+short_opts="hve:f:"
 long_opts="initrd-busybox:,help,verbose"
 getopt_out=$(getopt --name "${0##*/}" \
 	--options "${short_opts}" --long "${long_opts}" -- "$@") &&
@@ -47,13 +47,16 @@ while [ $# -ne 0 ]; do
 		-h|--help) Usage; exit 0;;
 		-v|--verbose) DEBUG=$((${DEBUG}+1));;
 		-e) extra_modules_in="$next";;
+		-f) firmware_in="$next";;
 		--) shift; break;;
 	esac
 	shift;
 done
 
-extra_modules_dir=$(readlink -f "$extra_modules_in")
-[ -d "$extra_modules_dir"  ] || bad_Usage "Extra modules dir: '$extra_modules_dir' not exists"
+if [ -n "$extra_modules_in" ]; then
+  extra_modules_dir=$(readlink -f "$extra_modules_in")
+  [ -d "$extra_modules_dir"  ] || bad_Usage "Extra modules dir: '$extra_modules_dir' not exists"
+fi
 
 [ $# -ge 3 ] || bad_Usage "must give rootfs.tar, kernel pkg, out_dir, src_type{pxe|iso}"
 rootfs_in=${1}
@@ -131,6 +134,14 @@ case $kpkg_in in
         ;;
 esac
 
+if [ -n "$firmware_in" ]; then
+	case $firmware_in in
+		*.rpm)
+			(rpm2cpio "${firmware_in}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp)
+			;;
+	esac
+fi
+
 ( cd "${kernel_d}" && find * -type f ) > "${kern_list_full}"
 
 kver=""
@@ -144,10 +155,13 @@ done
 	fail "failed to find kernel version. no lib/modules/* ?"
 
 echo "Kernel version $kver"
-dst_mod_dir="${kernel_d}/lib/modules/${kver}/extra"
-echo "Copy $extra_modules_dir to $dst_mod_dir"
-cp $extra_modules_dir/**/*.ko $dst_mod_dir ||
-	fail "failed to copy extract modules to $dst_mod_dir"
+
+if [ -n "$extra_modules_dir" ]; then
+  dst_mod_dir="${kernel_d}/lib/modules/${kver}/extra"
+  echo "Copy $extra_modules_dir to $dst_mod_dir"
+  cp $extra_modules_dir/**/*.ko $dst_mod_dir ||
+   	  fail "failed to copy extract modules to $dst_mod_dir"
+fi
 
 find ${kernel_d} -type f -name '*.ko.xz' | xargs xz -d
 
@@ -183,6 +197,10 @@ sort -u "${kern_modules}" > "${kern_files}"
 else
 
 find ${kernel_d}/lib/modules/${kver}/ -type f | sed "s|${kernel_d}/||" | grep -e "\.ko$" | sort -u > "${kern_files}"
+
+if [ -n "$firmware_in" ]; then
+  find ${kernel_d}/usr/lib/firmware/ -type f | sed "s|${kernel_d}/||" | sort -u > "${kern_files}"
+fi
 
 fi
 
