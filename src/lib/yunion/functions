@@ -9,12 +9,12 @@ SAS2_CMD=/opt/lsi/sas2ircu
 SAS3_CMD=/opt/lsi/sas3ircu
 
 mod_exists() {
-  lsmod | grep -w $1
+  lsmod | grep -w $1 > /dev/null 2>&1
 }
 
 mega_detect() {
   if mod_exists $MEGA_MOD; then
-    $MEGA_CMD -PDList -aALL | grep ^Adapter
+    $MEGA_CMD -PDList -aALL | grep ^Adapter > /dev/null 2>&1
   else
     return 1
   fi
@@ -22,7 +22,7 @@ mega_detect() {
 
 hpssa_detect() {
   if mod_exists $HPSSA_MOD; then
-    $HPSSA_MOD controller all show
+    $HPSSA_MOD controller all show > /dev/null 2>&1
   else
     return 1
   fi
@@ -30,7 +30,7 @@ hpssa_detect() {
 
 sas2_detect() {
   if mod_exists $SAS2_MOD; then
-    $SAS2_MOD LIST
+    $SAS2_MOD LIST > /dev/null 2>&1
   else
     return 1
   fi
@@ -38,7 +38,7 @@ sas2_detect() {
 
 sas3_detect() {
   if mod_exists $SAS3_MOD; then
-    $SAS3_MOD LIST
+    $SAS3_MOD LIST > /dev/null 2>&1
   else
     return 1
   fi
@@ -66,29 +66,30 @@ genpasswd() {
 }
 
 build_raid() {
+  echo "Buildraid $1 ..."
   case $1 in
-    "MegaRaid")
+    MegaRaid)
         if megaraid_build $2; then
             return 0
         else
             return 1
         fi
         ;;
-    "HPSARaid")
+    HPSARaid)
         if hpsaraid_build $2; then
             return 0
         else
             return 1
         fi
         ;;
-    "Mpt2SAS")
+    Mpt2SAS)
         if mpt2sas_build $2; then
             return 0
         else
             return 1
         fi
         ;;
-    "Mpt3SAS")
+    Mpt3SAS)
         if mpt3sas_build $2; then
             return 0
         else
@@ -102,6 +103,7 @@ build_raid() {
 
 megaraid_build() {
   echo "Megaraid build $1 ..."
+  /lib/yunion/megactl.sh $1
 }
 
 hpsaraid_build() {
