@@ -92,8 +92,13 @@ mkdir -p "${out_d_in}" && out_d=$(readlink -f "${out_d_in}") &&
 	kpkg=$(readlink -f "${kpkg_in}") ||
 	fail "failed to get full path for input"
 
-out_kernel="${out_d}/kernel"
-out_initramfs="${out_d}/initramfs"
+if [ "$src_type_in" == "pxe" ]; then
+    out_kernel="${out_d}/kernel"
+    out_initramfs="${out_d}/initramfs"
+else
+    out_kernel="${out_d}/vmlinuz"
+    out_initramfs="${out_d}/initrd.img"
+fi
 inter_d="$out_d/intermediate"
 
 kernel_d="${TEMP_D}/kernel"
