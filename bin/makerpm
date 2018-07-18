@@ -1,0 +1,93 @@
+#!/bin/sh
+
+set -e
+
+pushd $(dirname $(readlink -f "$BASH_SOURCE")) > /dev/null
+ROOT_DIR=$(cd .. && pwd)
+popd > /dev/null
+
+OUTPUT_DIR=$1
+
+if [ -z "$OUTPUT_DIR" ]; then
+    echo "Usage: $0 <OUTPUT_DIR>"
+    exit 1
+fi
+
+OUTPUT_DIR=$(readlink -f "$OUTPUT_DIR")
+
+PKG="baremetal-pxerom"
+
+KERNEL="$OUTPUT_DIR/kernel"
+INITRAMFS="$OUTPUT_DIR/initramfs"
+
+if [ ! -e "$KERNEL" ]; then
+    echo "$KERNEL not exists"
+    exit 1
+fi
+
+if [ ! -e "$INITRAMFS" ]; then
+    echo "$INITRAMFS not exists"
+    exit 1
+fi
+
+DEST_DIR=/opt/cloud/yunion/baremetal
+
+BUILDROOT=$(mktemp -d 2>/dev/null || mktemp -d -t 'yunion')
+
+echo "Build root ${BUILDROOT}"
+
+VERSION="1.0.0"
+RELEASE=`date +"%y%m%d%H"`
+
+SPEC_DIR=$BUILDROOT/SPECS
+SPEC_FILE=$SPEC_DIR/${PKG}.spec
+RPM_DIR=$BUILDROOT/RPMS
+
+DESCRIPTION="Yunion Baremetal PXE ROM"
+
+mkdir -p $SPEC_DIR
+
+echo "# Yunion RPM spec
+
+%global pkgname $PKG
+
+Name: %{pkgname}
+Version: $VERSION
+Release: $RELEASE
+Summary: %{pkgname}
+
+Group: Unspecified
+License: GPL
+URL: https://docs.yunion.cn
+
+%description
+$DESCRIPTION
+
+%prep
+
+%build
+
+%install
+mkdir -p \$RPM_BUILD_ROOT/$DEST_DIR
+install -D -m 0600 $KERNEL \$RPM_BUILD_ROOT/$DEST_DIR
+install -D -m 0600 $INITRAMFS \$RPM_BUILD_ROOT/$DEST_DIR
+
+%pre
+
+%post
+
+%preun
+
+%postun
+
+%files
+%doc
+$DEST_DIR/kernel
+$DEST_DIR/initramfs
+" > $SPEC_FILE
+
+rpmbuild --define "_topdir $BUILDROOT" -bb $SPEC_FILE
+
+cp -fr $RPM_DIR/* $OUTPUT_DIR/
+
+rm -fr $BUILDROOT
