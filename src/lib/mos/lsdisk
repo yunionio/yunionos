@@ -13,7 +13,7 @@ fail() {
 
 usage() {
     cat <<EOF
-Usage: ${0##*/} [-p|--pcie] [-s|--scsi] [-h|--help] [-r|--removable]
+Usage: ${0##*/} [-p|--pcie] [-s|--scsi] [-d|--raid] [-n|--nonraid] [-h|--help] [-r|--removable]
 
 List scsi or pcie block device, default to list all of them.
 
@@ -44,6 +44,7 @@ show_dev() {
     local DEV=$1
     local IS_SHANNON=$2
     local SIZE=$(cat $SYSPATH/$DEV/size)
+    local SECTOR=$(cat $SYSPATH/$DEV/queue/logical_block_size)
     # vendor maybe not exist
     local VENDOR=$(cat $SYSPATH/$DEV/device/vendor 2>/dev/null)
     local MODEL_PATH=
@@ -56,17 +57,87 @@ show_dev() {
     # rev maybe not exist
     local REV=$(cat $SYSPATH/$DEV/device/rev 2>/dev/null)
     local ROTATE=$(cat $SYSPATH/$DEV/queue/rotational)
-    echo $DEV $SIZE $ROTATE $VENDOR $MODEL $REV
+    local CTRLDEV=$SYSPATH/$DEV/../../../../../
+    while [ ! -e $CTRLDEV/class ]; do
+        CTRLDEV=$CTRLDEV/../
+    done
+    local DRIVER=$(basename $(readlink -f $CTRLDEV/driver))
+    local CLS=$(cat $CTRLDEV/class)
+    echo $DEV $SIZE $SECTOR $ROTATE $DRIVER $CLS $VENDOR $MODEL $REV
+}
+
+is_raid_controller() {
+    local DEV=$1
+    local CTRLDEV=$SYSPATH/$DEV/../../../../../
+    while [ ! -e $CTRLDEV/class ]; do
+        CTRLDEV=$CTRLDEV/../
+    done
+    local DRIVER=$(basename $(readlink -f $CTRLDEV/driver))
+    local CLS=$(cat $CTRLDEV/class)
+    if [ "$CLS" == "0x010400" ]; then
+        return 0
+    else
+        case $DRIVER in
+        megaraid_sas|hpsa|cciss|mptsas|mpt2sas|mpt3sas)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+        esac
+    fi
+}
+
+is_device() {
+    local DEV=$1
+    if [ -d $SYSPATH/$dev/device ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+is_scsi() {
+    local DEV=$1
+    if [ "${DEV:0:2}" == "sd" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+is_removable() {
+    local DEV=$1
+    REMOVABLE=$(cat $SYSPATH/$dev/removable)
+    if [ "$REMOVABLE" -eq "0" ]; then
+        return 1
+    fi
+    return 0
+}
+
+show_nonraid_devs() {
+    for dev in $(ls $SYSPATH)
+    do
+        if is_scsi $dev && is_device $dev && ! is_removable $dev && ! is_raid_controller $dev; then
+            show_dev $dev
+        fi
+    done
+}
+
+show_raid_devs() {
+    for dev in $(ls $SYSPATH)
+    do
+        if is_scsi $dev && is_device $dev && ! is_removable $dev && is_raid_controller $dev; then
+            show_dev $dev
+        fi
+    done
 }
 
 show_removable_devs() {
     for dev in $(ls $SYSPATH)
     do
-        if [ -d $SYSPATH/$dev/device ]; then
-            REMOVABLE=$(cat $SYSPATH/$dev/removable)
-            if [ "$REMOVABLE" -eq "1" ]; then
-                    show_dev $dev
-            fi
+        if is_device $dev && is_removable $dev; then
+            show_dev $dev
         fi
     done
 }
@@ -74,11 +145,8 @@ show_removable_devs() {
 show_devs() {
     for dev in $@
     do
-        if [ -d $SYSPATH/$dev/device ]; then
-            REMOVABLE=$(cat $SYSPATH/$dev/removable)
-            if [ "$REMOVABLE" -eq "0" ]; then
-                    show_dev $dev
-            fi
+        if is_device $dev && ! is_removable $dev; then
+            show_dev $dev
         fi
     done
 }
@@ -88,12 +156,18 @@ show_scsi_devs() {
 }
 
 show_nvme_devs() {
+    if [ ! -x /opt/nvme-cli/nvme ]; then
+        return
+    fi
     local devs=$(/opt/nvme-cli/nvme list | awk \
         'NR > 2 {split($1, a, "/dev/"); print a[2]}')
     show_devs $devs
 }
 
 show_shannon_devs() {
+    if [ ! -x /bin/shannon-status ]; then
+        return
+    fi
     local devs=$(/bin/shannon-status -l | awk \
         '{split($2, a, "/dev/"); print a[2]}')
     for dev in $devs
@@ -118,8 +192,8 @@ show_all_devs() {
     show_pcie_devs
 }
 
-short_opts="psrh"
-long_opts="pcie,scsi,removable,help"
+short_opts="psrdnh"
+long_opts="pcie,scsi,removable,raid,nonraid,help"
 getopt_out=$(getopt --name "${0##*/}" \
     --options "${short_opts}" --long "${long_opts}" -- "$@") &&
     eval set -- "${getopt_out}" ||
@@ -137,6 +211,8 @@ while [ $# -ne 0 ]; do
         -s|--scsi) show_scsi_devs; exit 0;;
         -p|--pcie) show_pcie_devs; exit 0;;
         -r|--removable) show_removable_devs; exit 0;;
+        -d|--raid) show_raid_devs; exit 0;;
+        -n|--nonraid) show_nonraid_devs; exit 0;;
         --) shift; break;;
         *) bad_usage;
     esac
