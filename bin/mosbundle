@@ -101,6 +101,11 @@ else
 fi
 inter_d="$out_d/intermediate"
 
+baremetal_prepare_d="$topdir/baremetal_prepare"
+out_baremetal_prepare_d="$out_d/baremetal_prepare"
+baremetal_root_fs="$out_baremetal_prepare_d/rootfs"
+baremetal_prepare_out="$out_d/baremetal_prepare.tar.gz"
+
 kernel_d="${TEMP_D}/kernel"
 kern_list_full="${TEMP_D}/kernel.files.full"
 kern_files="${TEMP_D}/kernel.files"
@@ -274,7 +279,20 @@ rm -Rf "$initramfs_d/vmlinuz" "$initramfs_d/boot" ||
 	fail "failed to remove files in initramfs staging dir"
 
 ( cd "$initramfs_d" && find . | cpio --quiet -o -H newc |
-	gzip -9 ) > "$initramfs"
+    gzip -9 ) > "$initramfs"
+
+if [ "$src_type_in" == "pxe" ]; then
+debug 1 "creating baremetal prepare package"
+mkdir -p $baremetal_root_fs ||
+    fail "failed to create baremetal rootfs dir"
+cp -rf $baremetal_prepare_d/* $out_baremetal_prepare_d ||
+    fail "failed to copy baremetal prepare dir"
+cp -rf $initramfs_d/* $baremetal_root_fs ||
+    fail "failed to copy rootfs"
+(cd "$out_baremetal_prepare_d" && tar -cpzf - *) > "$baremetal_prepare_out" ||
+    fail "failed to create baremetal_prepare.tar.gz"
+echo "wrote ${baremetal_prepare_out}"
+fi
 
 cp "${kernel_d}/${vmlinuz}" "${out_kernel}" ||
 	fail "failed to copy kernel to ${out_kernel}"
