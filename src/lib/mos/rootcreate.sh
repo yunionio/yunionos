@@ -17,7 +17,7 @@ fi
 if [ -z "$DISK" ]; then
     DISK=$(lsdisk --raid | head -n 1 | awk '{print $1}')
     if [ -z "$DISK" ]; then
-        DISK=$(lsdisk --scsi | head -n 1 | awk '{print $1}')
+        DISK=$(lsdisk --nonraid | head -n 1 | awk '{print $1}')
     fi
 fi
 
