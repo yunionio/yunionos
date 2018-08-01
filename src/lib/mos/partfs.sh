@@ -11,7 +11,10 @@ if [ -z "$DEV" ]; then
     exit 1
 fi
 
-DISK=$(lsdisk | head -n 1 | awk '{print $1}')
+DISK=$(lsdisk --raid | head -n 1 | awk '{print $1}')
+if [ -z "$DISK" ]; then
+    DISK=$(lsdisk --scsi | head -n 1 | awk '{print $1}')
+fi
 
 DEV=$(basename $DEV)
 
