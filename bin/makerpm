@@ -37,6 +37,7 @@ if [ ! -e "$BAREMETAL_PREPARE_PKG" ]; then
 fi
 
 DEST_DIR=/opt/cloud/yunion/baremetal
+BAREMETAL_PREPARE_PKG_DIR=/opt/cloud/yunion/baremetal/baremetal-prepare
 
 BUILDROOT=$(mktemp -d 2>/dev/null || mktemp -d -t 'yunion')
 
@@ -75,9 +76,10 @@ $DESCRIPTION
 
 %install
 mkdir -p \$RPM_BUILD_ROOT/$DEST_DIR
+mkdir -p \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PKG_DIR
 install -D -m 0600 $KERNEL \$RPM_BUILD_ROOT/$DEST_DIR
 install -D -m 0600 $INITRAMFS \$RPM_BUILD_ROOT/$DEST_DIR
-install -D -m 0600 $BAREMETAL_PREPARE_PKG \$RPM_BUILD_ROOT/$DEST_DIR
+install -D -m 0600 $BAREMETAL_PREPARE_PKG \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PKG_DIR
 
 %pre
 
@@ -91,7 +93,7 @@ install -D -m 0600 $BAREMETAL_PREPARE_PKG \$RPM_BUILD_ROOT/$DEST_DIR
 %doc
 $DEST_DIR/kernel
 $DEST_DIR/initramfs
-$DEST_DIR/baremetal_prepare.tar.gz
+$BAREMETAL_PREPARE_PKG_DIR/baremetal_prepare.tar.gz
 " > $SPEC_FILE
 
 rpmbuild --define "_topdir $BUILDROOT" -bb $SPEC_FILE
