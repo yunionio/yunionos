@@ -56,7 +56,7 @@ function confget() {
 function generate_post_data()
 {
 cat <<EOF
-{"username": "$username", "password": "$password1", "ip_addr": "$ip_addr", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password"}
+{"username": "$username", "password": "$password1", "ip_addr": "$ip_addr", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME"}
 EOF
 }
 
@@ -111,6 +111,7 @@ requires_root
 getIpmiInfo
 
 CONFIG_FILE=$CUR_DIR/baremetal_prepare.conf
+HOSTNAME=`hostname | cut -d . -f 1`
 
 # baremetal_agent_uri=$1
 auth_token=$1
