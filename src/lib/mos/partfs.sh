@@ -11,22 +11,27 @@ if [ -z "$DEV" ]; then
     exit 1
 fi
 
-DISK=$(lsdisk --raid | head -n 1 | awk '{print $1}')
-if [ -z "$DISK" ]; then
-    DISK=$(lsdisk --scsi | head -n 1 | awk '{print $1}')
-fi
-
 DEV=$(basename $DEV)
 
-if [ ! -d /sys/block/$DISK/$DEV ]; then
-    echo "No such device" $DEV
+DISK=
+
+for d in $(ls /sys/block/)
+do
+    if [ "$d" == "${DEV:0:${#d}}" ] && [ -e /sys/block/$d/device ]; then
+        DISK=$d
+        break
+    fi
+done
+
+if [ -z "$DISK" ]; then
+    echo "Not a partition " $DEV
     exit 1
 fi
 
-INDEX=$(cat /sys/block/$DISK/$DEV/partition)
+INDEX=${DEV:${#DISK}}
 
 if [ -z "$INDEX" ]; then
-    echo "Not a partition " $DEV
+    echo "Not a parition"
     exit 1
 fi
 
