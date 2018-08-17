@@ -26,7 +26,7 @@ if [ -z "$DISK" ]; then
     exit 1
 fi
 
-rm -fr /tmp/$IMGID /tmp/$IMGID.raw
+rm -fr /tmp/????????-????-????-*
 
 wget -q --header "X-Auth-Token: $TOKEN" $IMGURL/images/$IMGID -P /tmp/
 
@@ -55,7 +55,11 @@ case "$LABEL" in
         ;;
     msdos)
         echo "MSDOS partion"
-        echo -n -e "r\nf\nY\nw\nY\n" | gdisk /dev/$DISK
+        if [[ "$SECTOR" -lt "4294967296" ]]; then
+            echo "No need to convert"
+        else
+            echo -n -e "r\nf\nY\nw\nY\n" | gdisk /dev/$DISK
+        fi
         ;;
 esac
 
