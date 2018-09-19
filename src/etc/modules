@@ -38,3 +38,5 @@ i40e
 sg
 # usb-storage
 ata_piix
+fuse
+bnx2x
