@@ -402,8 +402,9 @@ echo "OS configuration ..."
 
 echo "fstab configuration ..."
 
-UUID=$(blkid /dev/${DISK}${DATAIDX})
-UUID=${UUID:1:36}
+DEVNAME="/dev/${DISK}${DATAIDX}"
+UUID=$(blkid $DEVNAME)
+UUID=${UUID:$((${#DEVNAME}+8)):36}
 echo "UUID=${UUID}    /opt/cloud/workspace    ext4    defaults    1   1" >> $ROOTFS/etc/fstab
 
 echo "Network configuration ..."
