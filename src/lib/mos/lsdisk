@@ -78,7 +78,7 @@ is_raid_controller() {
         return 0
     else
         case $DRIVER in
-        megaraid_sas|hpsa|cciss|mptsas|mpt2sas|mpt3sas)
+        megaraid_sas|hpsa|cciss|mpt2sas|mpt3sas)
             return 0
             ;;
         *)
