@@ -17,7 +17,7 @@ OUTPUT_DIR=$(readlink -f "$OUTPUT_DIR")
 
 PKG="baremetal-pxerom"
 
-PXEFILES="kernel initramfs bootia32.efi chain.c32 ldlinux.e32 libcom32.c32 menu.c32 bootx64.efi ldlinux.c32 ldlinux.e64 libutil.c32 pxelinux.0"
+PXEFILES="kernel initramfs bootia32.efi chain.c32 ldlinux.e32 libcom32.c32 menu.c32 bootx64.efi ldlinux.c32 ldlinux.e64 libutil.c32 pxelinux.0 lpxelinux.0"
 BAREMETAL_PREPARE_PKG="$OUTPUT_DIR/baremetal_prepare.tar.gz"
 
 for f in $PXEFILES
