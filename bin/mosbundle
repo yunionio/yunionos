@@ -294,6 +294,10 @@ cp -rf $initramfs_d/* $baremetal_root_fs ||
 echo "wrote ${baremetal_prepare_out}"
 fi
 
+if [ "$src_type_in" == "pxe" ]; then
+	cp -rf ${topdir}/pxelinux/* ${out_d} || fail "failed to copy pxelinux boot files"
+fi
+
 cp "${kernel_d}/${vmlinuz}" "${out_kernel}" ||
 	fail "failed to copy kernel to ${out_kernel}"
 

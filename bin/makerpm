@@ -17,19 +17,16 @@ OUTPUT_DIR=$(readlink -f "$OUTPUT_DIR")
 
 PKG="baremetal-pxerom"
 
-KERNEL="$OUTPUT_DIR/kernel"
-INITRAMFS="$OUTPUT_DIR/initramfs"
+PXEFILES="kernel initramfs bootia32.efi chain.c32 ldlinux.e32 libcom32.c32 menu.c32 bootx64.efi ldlinux.c32 ldlinux.e64 libutil.c32 pxelinux.0"
 BAREMETAL_PREPARE_PKG="$OUTPUT_DIR/baremetal_prepare.tar.gz"
 
-if [ ! -e "$KERNEL" ]; then
-    echo "$KERNEL not exists"
-    exit 1
-fi
-
-if [ ! -e "$INITRAMFS" ]; then
-    echo "$INITRAMFS not exists"
-    exit 1
-fi
+for f in $PXEFILES
+do
+    if [ ! -e "${OUTPUT_DIR}/${f}" ]; then
+        echo "${OUTPUT_DIR}/${f} not exists"
+        exit 1
+    fi
+done
 
 if [ ! -e "$BAREMETAL_PREPARE_PKG" ]; then
     echo "$BAREMETAL_PREPARE_PKG not exists"
@@ -43,7 +40,7 @@ BUILDROOT=$(mktemp -d 2>/dev/null || mktemp -d -t 'yunion')
 
 echo "Build root ${BUILDROOT}"
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 RELEASE=`date +"%y%m%d%H"`
 
 SPEC_DIR=$BUILDROOT/SPECS
@@ -76,10 +73,14 @@ $DESCRIPTION
 
 %install
 mkdir -p \$RPM_BUILD_ROOT/$DEST_DIR
-mkdir -p \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PKG_DIR
-install -D -m 0600 $KERNEL \$RPM_BUILD_ROOT/$DEST_DIR
-install -D -m 0600 $INITRAMFS \$RPM_BUILD_ROOT/$DEST_DIR
-install -D -m 0644 $BAREMETAL_PREPARE_PKG \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PKG_DIR
+mkdir -p \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PKG_DIR" > $SPEC_FILE
+
+for f in $PXEFILES
+do
+    echo "install -D -m 0600 ${OUTPUT_DIR}/${f} \$RPM_BUILD_ROOT/$DEST_DIR" >> $SPEC_FILE
+done
+
+echo "install -D -m 0644 $BAREMETAL_PREPARE_PKG \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PKG_DIR
 
 %pre
 
@@ -90,11 +91,15 @@ install -D -m 0644 $BAREMETAL_PREPARE_PKG \$RPM_BUILD_ROOT/$BAREMETAL_PREPARE_PK
 %postun
 
 %files
-%doc
-$DEST_DIR/kernel
-$DEST_DIR/initramfs
-$BAREMETAL_PREPARE_PKG_DIR/baremetal_prepare.tar.gz
-" > $SPEC_FILE
+%doc" >> $SPEC_FILE
+
+for f in $PXEFILES
+do
+    echo "${DEST_DIR}/${f}" >> $SPEC_FILE
+done
+
+echo "$BAREMETAL_PREPARE_PKG_DIR/baremetal_prepare.tar.gz
+" >> $SPEC_FILE
 
 rpmbuild --define "_topdir $BUILDROOT" -bb $SPEC_FILE
 
