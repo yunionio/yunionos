@@ -71,6 +71,26 @@ function check_and_set_port() {
     fi
 }
 
+function wait_port_listening() {
+    is_port_listening=false
+    for ((i=1; i<=$1; i=i+1))
+    do
+        if check_port $ssh_port; then
+            is_port_listening=true
+            break
+        fi
+        sleep 1
+    done
+
+    if [ ! is_port_listening ]; then
+        # false is 1
+        return 1
+    else
+        # true is 0
+        return 0
+    fi
+}
+
 function make_runc_exec_shell() {
 cat << EOF > $CUR_DIR/run.sh
 #! /bin/sh
@@ -95,72 +115,85 @@ function prepare_rootfs() {
 }
 
 function get_baremetal_agent_uri() {
-local region=$1
-local filter_ip=$2
-local token=$3
-http_resp=`curl -s -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url?ip='$filter_ip`
-echo $http_resp
+    local region=$1
+    local filter_ip=$2
+    local token=$3
+    http_resp=`curl -k -s -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url?ip='$filter_ip`
+    echo $http_resp
 }
 
-echo "Register baremetal start ..."
+function main() {
+    echo "Register baremetal start ..."
 
-CUR_DIR=$(dirname $(readlink -f "$0"))
+    CUR_DIR=$(dirname $(readlink -f "$0"))
 
-requires_root
-# prepare_rootfs
-getIpmiInfo
+    requires_root
+    # prepare_rootfs
+    getIpmiInfo
 
-CONFIG_FILE=$CUR_DIR/baremetal_prepare.conf
-HOSTNAME=`hostname | cut -d . -f 1`
+    CONFIG_FILE=$CUR_DIR/baremetal_prepare.conf
+    HOSTNAME=`hostname | cut -d . -f 1`
+    # baremetal_agent_uri=$1
+    auth_token=$1
+    region_uri=$2
+    ssh_password=$3
+    ssh_port=2222
 
-# baremetal_agent_uri=$1
-auth_token=$1
-region_uri=$2
-ssh_password=$3
-ssh_port=2222
+    if [ -z $auth_token ]; then
+        echo "Not found auth token, exit..."
+        exit 1
+    fi
 
-if [ -z $auth_token ]; then
-    echo "Not found auth token, exit..."
-    exit 1
-fi
+    baremetal_agent_uri=$(get_baremetal_agent_uri $region_uri $ip_addr $auth_token)
+    if [ -z $baremetal_agent_uri ]; then
+        echo "Not found baremetal agent uri, exit..."
+        exit 1
+    fi
 
-baremetal_agent_uri=$(get_baremetal_agent_uri $region_uri $ip_addr $auth_token)
-if [ -z $baremetal_agent_uri ]; then
-    echo "Not found baremetal agent uri, exit..."
-    exit 1
-fi
+    if [ -z $ssh_password ]; then
+        ssh_password="yunion@123"
+    fi
 
-if [ -z $ssh_password ]; then
-    ssh_password="yunion@123"
-fi
+    check_and_set_port
+    make_runc_exec_shell
+
+    cd $CUR_DIR
+    $CUR_DIR/runc kill yunion_baremetal_prepare KILL
+    $CUR_DIR/runc delete yunion_baremetal_prepare
+    $CUR_DIR/runc run --no-new-keyring -d yunion_baremetal_prepare
+
+    # wait ssh port in use
+    if ! wait_port_listening 60 ; then
+        echo "dropbear ssh server not started"
+        exit_clean
+        exit 1
+    fi
 
 
-check_and_set_port
-make_runc_exec_shell
+    resp=`curl -k -s -w "\n%{http_code}" -X POST \
+    $baremetal_agent_uri'/baremetals/register-baremetal' \
+    -H 'Content-Type: application/json' -H "X-Auth-Token: $auth_token" \
+    -d "$(generate_post_data)"`
 
-cd $CUR_DIR
-$CUR_DIR/runc kill yunion_baremetal_prepare KILL
-$CUR_DIR/runc delete yunion_baremetal_prepare
-$CUR_DIR/runc run -d yunion_baremetal_prepare
+    resp=(${resp[@]})
+    http_code=${resp[-1]}
+    http_body=${resp[@]::${#resp[@]}-1}
 
-resp=`curl -s -w "\n%{http_code}" -X POST \
-$baremetal_agent_uri'/baremetals/register-baremetal' \
--H 'Content-Type: application/json' -H "X-Auth-Token: $auth_token" \
--d "$(generate_post_data)"`
+    if [ $http_code != "200" ]; then
+        echo $http_body
+        echo "Http register baremetal error, exit..."
+        exit 1
+    fi
 
-resp=(${resp[@]})
-http_code=${resp[-1]}
-http_body=${resp[@]::${#resp[@]}-1}
-
-if [ $http_code != "200" ]; then
-    echo $http_body
-    echo "Http register baremetal error, exit..."
-    exit 1
-fi
-
-echo "Prepare SUCCESS waiting register, It takes a few minutes..."
+    echo "Prepare SUCCESS waiting register, It takes a few minutes..."
+    sleep 600
+    exit_clean
+}
 
 #clean runc process
-sleep 600
-$CUR_DIR/runc kill yunion_baremetal_prepare KILL
-$CUR_DIR/runc delete yunion_baremetal_prepare
+function exit_clean() {
+    $CUR_DIR/runc kill yunion_baremetal_prepare KILL
+    $CUR_DIR/runc delete yunion_baremetal_prepare
+}
+
+main $@
