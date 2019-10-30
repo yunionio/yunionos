@@ -1,5 +1,10 @@
 #!/bin/sh
 
+for tok in $(cat /proc/cmdline)
+do
+    export $tok
+done
+
 case "$1" in
     start)
         for i in $(seq 3)
@@ -9,9 +14,26 @@ case "$1" in
                 if [ "$dev" != "lo" ]; then
                     echo "Initialize $dev ..."
                     TRIES=12
-                    /sbin/udhcpc -t $TRIES -T 3 -n -i $dev
-                    if [ "$?" -eq "0" ]; then
-                        exit 0
+                    if [ -n "$addr" ]; then
+                        /sbin/ifconfig $dev $addr netmask $mask
+                        /sbin/ip route add default via $gateway
+                        sleep 1
+                        for t in $(seq $TRIES); do
+                            ping -c 1 $dest
+                            if [ "$?" -eq "0" ]; then
+                                echo $dev > /tmp/admin_nic
+                                exit 0
+                            fi
+                            sleep 1
+                        done
+                        /sbin/ip route del default via $gateway
+                        /sbin/ifconfig $dev 0 down
+                    else
+                        /sbin/udhcpc -t $TRIES -T 3 -n -i $dev
+                        if [ "$?" -eq "0" ]; then
+                            echo $dev > /tmp/admin_nic
+                            exit 0
+                        fi
                     fi
                 fi
             done
