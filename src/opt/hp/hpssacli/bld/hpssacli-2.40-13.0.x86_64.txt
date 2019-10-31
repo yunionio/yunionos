@@ -1,0 +1,190 @@
+HPE Smart Storage Administrator CLI (HPSSACLI)
+Version 2.40-13.0
+11/4/2015
+
+Description
+-----------
+The HPE Smart Storage Administrator CLI is the command line-based disk 
+configuration program for Smart Array Controllers. 
+
+* All other product names mentioned herein may be trademarks of their 
+  respective companies.
+
+Supported Operating Systems and Platforms
+-----------------------------------------
+Linux 32-bit components:  
+   SuSE Linux Enterprise Server 10
+   SuSE Linux Enterprise Server 11
+   Red Hat Enterprise Linux 5
+   Red Hat Enterprise Linux 6
+   Red Hat Enterprise Linux 7
+
+Linux 64-bit components:
+   SuSE Linux Enterprise Server 10 (x86_64)
+   SuSE Linux Enterprise Server 11 (x86_64)
+   Red Hat Enterprise Linux 5 (x86_64)
+   Red Hat Enterprise Linux 6 (x86_64)
+   Red Hat Enterprise Linux 7 (x86_64)
+   Debian Sarge 64 bit
+   Debian Etch (amd64)
+
+   NOTE: For Red Hat Enterprise Linux 7.1 the sg driver must be manually 
+         added so that it is loaded at boot time. Without the sg driver being
+         loaded, devices or controllers may not be discovered.
+         Here is a recommended way to do this:
+
+            sudo echo sg > /etc/modules-load.d/sg.conf
+            sudo rebo
+
+* Any platform that requires the CCISS driver should use version 3.6.28 or newer.
+
+These drivers are available from http://www.hp.com.
+
+Supported Controllers
+---------------------
+  Dynamic Smart Array B110i SATA RAID
+  Smart Array P212 Controller
+  Smart Array P410 Controller
+  Smart Array P410i Controller
+  Smart Array P411 Controller
+  Smart Array P711m Controller
+  Smart Array P712m Controller
+  Smart Array P812 Controller
+
+  Dynamic Smart Array B120i
+  Dynamic Smart Array B320i
+  Smart Array P220i Controller
+  Smart Array P222 Controller
+  Smart Array P420 Controller
+  Smart Array P420i Controller
+  Smart Array P421 Controller
+  Smart Array P721m Controller
+  Smart Array P822 Controller
+
+  Smart Array P230i Controller
+  Smart Array P430 Controller
+  Smart Array P431 Controller
+  Smart Array P530 Controller
+  Smart Array P531 Controller
+  Smart Array P731m Controller
+  Smart Array P830 Controller
+  Smart Array P830i Controller
+  
+  Dynamic Smart Array B140i
+  Smart HBA H240 Controller
+  Smart HBA H240ar Controller
+  Smart HBA H241 Controller
+  Smart HBA H244br Controller
+  Smart Array P244br Controller
+  Smart Array P246br Controller
+  Smart Array P440 Controller
+  Smart Array P440ar Controller
+  Smart Array P441 Controller
+  Smart Array P741m Controller
+  Smart Array P840 Controller
+  Smart Array P840ar Controller
+  Smart Array P841 Controller
+ 
+Installing & Running the HPE Smart Storage Administrator
+--------------------------------------------------------------
+  Installation:
+    HPSSACLI is distributed using Red Hat Package Manager (RPM) packages and
+    .deb packages for Debian. 
+    If there is an older version of HPSSACLI installed on the system, please
+       use "rpm -e hpssacli" to remove it first. Use "rpm -i <file name>" to
+       install the application.
+    Please type "man rpm" for other details regarding RPM.
+    NOTE: On Debian systems, a ".deb" package file can be installed using the
+    "dpkg -i hpssacli.xxx.deb" command.  The dpkg -r hpssacli command
+    is used to remove the package.
+    The software resides in /opt/hp/hpssacli and the executable 
+    name is hpssacli which is located in /usr/sbin.
+
+    When attempting to run HPSSACLI on any HP-supported version of Linux, it is
+    highly recommended that you install the latest version of the HPE ProLiant
+    Smart Array Controller driver for your intended Linux operating system.
+    Drivers may be obtained by clicking on "Support & Drivers" from HP's
+    website at:  http://www.hp.com
+
+  For Debian 64 bit:
+     dpkg -i --force-architecture <file name>. hpssacli requires the libunwind
+     bit package to be installed.
+
+    
+  Run the HPSSACLI:
+  
+    Make sure that you have gone through the following checklist:
+    . You run hpssacli as root.
+
+    To start the application:
+    If /usr/sbin is already added in your path, just type:
+    "hpssacli".
+    More options can be found by typing "hpssacli help".  Also see the "Using
+    HPSSACLI" section of this document, located after Feedback.
+
+  Exiting HPSSACLI:
+    1. To exit the HPSSACLI, type "exit" while at the CLI command console.
+
+  
+Additional Notes
+----------------
+  1.  After creating or deleting logical drives with HPSSACLI, under some
+      special circumstances, the device name mapping might change after you
+      first reboot the system. Also, Linux might see previously not visible
+      logical drives after rebooting. This name mapping problem is common to
+      all SCSI devices on Linux. 
+  2.  Do not insert or remove a controller driver module when hpssacli is
+      running.
+  3.  Please stop the HPE Storage Agents when deleting logical drives
+      since HPE Storage Agents keeps all logical drives open.
+  4.  If all physical drives on a controller fail or are removed, software keys
+      will not be saved to the controller.  
+  5.  HPSSACLI may appear unresponsive during heavy array controller I/O
+      conditions, such as during a partition format or a logical drive rebuild.
+  6.  HPSSACLI will not prevent the deletion of logical drives on fibre
+      controllers that have mounted partitions.
+  7.  When using Linux as the host operating system, if a Smart Array
+      controller has 16 or more volumes configured, deleting any volume in
+      HPSSACLI will not update the /proc/partitions to reflect the deletion of
+      the device node associated with that volume. Rebooting the server will
+      cause the update to happen. Note that there is also a limitation that
+      only the first 16 volumes configured will be available to the operating
+      system.
+  8.  On RHEL5 systems, for this version of the HPSSACLI version 3.6.18-10 or
+      newer of the HPE ProLiant Smart Array Controller Driver for Red Hat
+      Enterprise Linux 5 (x86, x86-64) is required. Drivers may be obtained by
+      clicking on "Support & Drivers" from HP's website at:  http://www.hp.com
+
+
+Notes for HPSSA Scripting
+-----------------------
+* HPSSA scripting (HPSSASCRIPTING) now uses a new engine to auto configure
+  volumes. When using the AUTO mode, it will attempt to configure two volumes;
+  an OS volume and a Data volume. The OS volume will be RAID1, while the Data
+  volume will be the highest possible RAID up to 6, depending on the number of
+  disks and RAID modes supported by the controller. Spares may be automatically
+  allocated. All user input in the input config file is ignored in AUTO mode.
+  The actual volumes created will depend on the controller, the number and size
+  of disks and the status of license keys in the controller.
+* In scripting input/output, 2 disk mirrors are considered RAID1, 4 disk and
+  higher mirrors are RAID10. For compatibility, input scripts still accept
+  RAID1 for 4+ disk mirrors, however we recommend moving to the new argument
+  terminology as soon as possible.
+* ARRAY and VOLUME arguments in configure mode can be specified as "Next",
+  which will use the next available ID.
+* DRIVE arguments can be a number or wildcard, e.g. "*" or "2". In the first
+  example, all available drives will be used, in the second two drives will be
+  used.
+* The CONTROLLER argument can be FIRST. Controllers are sorted after discovery,
+  the order being: internal before external, in ascending slot order. This
+  ensures that the input CONTROLLER=FIRST will target an internal controller
+  (SLOT=0) or the controller in the lowest PCI slot.
+* To improve performance, use the REPEAT keyword when creating multiple
+  identical logical drives.
+
+
+Feedback
+--------
+  For support for HPSSACLI or Smart Array controllers, please visit the web at 
+    http://support.hp.com.
+

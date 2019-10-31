@@ -16,11 +16,11 @@ debug() {
 fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
 Usage() {
 	cat <<EOF
-Usage: ${0##*/} rootfs.tar kpkg.deb output_dir
+Usage: ${0##*/} [-e EXTRA_MODULES_DIR] rootfs.tar kpkg.deb output_dir [iso|pxe] [-f firmware_pkg] [-a]
    [re]Bundle a buildroot rootfs into a mini-cloud image
 
    Example:
-    ${0##*/} [-e EXTRA_MODULES_DIR] rootfs.tar linux-image-*-virtuaal*.deb build-output/
+    ${0##*/} [-e EXTRA_MODULES_DIR] rootfs.tar linux-image-*-virtuaal*.deb build-output/ [iso|pxe] [-f firmware_pkg] [-a]
 EOF
 }
 bad_Usage() { Usage 1>&2; fail "$@"; }
@@ -32,8 +32,8 @@ xrsync() {
 	rsync --archive --xattrs --hard-links --acls --sparse "$@"
 }
 
-short_opts="hve:f:"
-long_opts="initrd-busybox:,help,verbose"
+short_opts="hvae:f:"
+long_opts="initrd-busybox:,help,verbose,all"
 getopt_out=$(getopt --name "${0##*/}" \
 	--options "${short_opts}" --long "${long_opts}" -- "$@") &&
 	eval set -- "${getopt_out}" ||
@@ -41,11 +41,14 @@ getopt_out=$(getopt --name "${0##*/}" \
 
 topdir=$(cd "${0%/*}/.." && pwd)
 
+all_modules=
+
 while [ $# -ne 0 ]; do
 	cur=${1}; next=${2};
 	case "$cur" in
 		-h|--help) Usage; exit 0;;
 		-v|--verbose) DEBUG=$((${DEBUG}+1));;
+		-a|--all) all_modules=1;;
 		-e) extra_modules_in="$next";;
 		-f) firmware_in="$next";;
 		--) shift; break;;
@@ -185,7 +188,7 @@ if [ ! -x "${kernel_d}/lib/modules/${kver}/modules.builtin" ]; then
     touch "${kernel_d}/lib/modules/${kver}/modules.builtin"
 fi
 
-if [ "$src_type_in" == "pxe" ]; then
+if [ "$src_type_in" == "pxe" ] && [ -z "$all_modules" ] ; then
 
 mdep="${kernel_d}/lib/modules/${kver}/modules.dep"
 for x in ${MODULES}; do
@@ -282,16 +285,16 @@ rm -Rf "$initramfs_d/vmlinuz" "$initramfs_d/boot" ||
     gzip -9 ) > "$initramfs"
 
 if [ "$src_type_in" == "pxe" ]; then
-debug 1 "creating baremetal prepare package"
-mkdir -p $baremetal_root_fs ||
+  debug 1 "creating baremetal prepare package"
+  mkdir -p $baremetal_root_fs ||
     fail "failed to create baremetal rootfs dir"
-cp -rf $baremetal_prepare_d/* $out_baremetal_prepare_d ||
+  cp -rf $baremetal_prepare_d/* $out_baremetal_prepare_d ||
     fail "failed to copy baremetal prepare dir"
-cp -rf $initramfs_d/* $baremetal_root_fs ||
+  cp -rf $initramfs_d/* $baremetal_root_fs ||
     fail "failed to copy rootfs"
-(cd "$out_baremetal_prepare_d" && tar -cpzf - *) > "$baremetal_prepare_out" ||
+  (cd "$out_baremetal_prepare_d" && tar -cpzf - *) > "$baremetal_prepare_out" ||
     fail "failed to create baremetal_prepare.tar.gz"
-echo "wrote ${baremetal_prepare_out}"
+  echo "wrote ${baremetal_prepare_out}"
 fi
 
 if [ "$src_type_in" == "pxe" ]; then

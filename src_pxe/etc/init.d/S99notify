@@ -1,6 +1,7 @@
 #!/bin/sh
 
 fetch() {
+
 for tok in $(cat /proc/cmdline)
 do
     export $tok
