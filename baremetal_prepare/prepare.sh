@@ -1,5 +1,13 @@
 #! /bin/bash
 
+function error() {
+    echo -e "\033[41;36mERROR:\033[0m\e[31m $@\e[0m"
+}
+
+function info() {
+    echo -e "\033[42;36m\e[37mINFO:\033[0m\e[32m $@\e[0m"
+}
+
 function check_ip() {
     IP=$1
     if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
@@ -18,7 +26,7 @@ function check_ip() {
 }
 
 function getIpmiInfo(){
-    echo "******Enter the IPMI username password ip_addr ******"
+    info "****** Enter the IPMI username password ip_addr ******"
     echo -n "Enter the IPMI username: "
     read username
     echo -n "Enter the IPMI password: "
@@ -26,21 +34,21 @@ function getIpmiInfo(){
     echo -n 'Enter the IPMI password again: '
     read password2
     if [ "$password1" != "$password2" ]; then
-        echo "Password twice enter is not equal, exit..."
+        error "Password twice enter is not equal, exit..."
         exit 1
     fi
     echo -n "Enter the IPMI ip: "
     read ip_addr
     check_ip $ip_addr
     if [ $? -eq 1 ]; then
-        echo "Ip addr is illegal, exit..."
+        error "Ip addr is illegal, exit..."
         exit 1
     fi
 }
 
 function requires_root {
     if [[ $EUID -ne 0 ]]; then
-        echo "ERROR: You need root to run the program" 2>&1
+        error "You need root to run the program" 2>&1
         exit 1
     fi
 }
@@ -100,7 +108,7 @@ $ssh_password
 $ssh_password
 MYEOF
 
-mkdir -p /var/run/dropbear
+mkdir -p /etc/dropbear
 dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key
 dropbear -F -p $ssh_port
 EOF
@@ -118,12 +126,12 @@ function get_baremetal_agent_uri() {
     local region=$1
     local filter_ip=$2
     local token=$3
-    http_resp=`curl -k -s -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url?ip='$filter_ip`
+    http_resp=`curl -k -s -w "\n%{http_code}" -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url?ip='$filter_ip`
     echo $http_resp
 }
 
 function main() {
-    echo "Register baremetal start ..."
+    info "*********** Register baremetal start ... ************"
 
     CUR_DIR=$(dirname $(readlink -f "$0"))
 
@@ -140,15 +148,23 @@ function main() {
     ssh_port=2222
 
     if [ -z $auth_token ]; then
-        echo "Not found auth token, exit..."
+        error "Not found auth token, exit..."
         exit 1
     fi
 
-    baremetal_agent_uri=$(get_baremetal_agent_uri $region_uri $ip_addr $auth_token)
-    if [ -z $baremetal_agent_uri ]; then
-        echo "Not found baremetal agent uri, exit..."
+    baremetal_agent_uri_resp=$(get_baremetal_agent_uri $region_uri $ip_addr $auth_token)
+    if [ -z "$baremetal_agent_uri_resp" ]; then
+        error "Failed get baremetal agent uri, empty response"
         exit 1
     fi
+    baremetal_agent_uri_resp_arr=(${baremetal_agent_uri_resp[@]})
+    resp_code=${baremetal_agent_uri_resp_arr[${#baremetal_agent_uri_resp_arr[@]}-1]}
+    if (( $resp_code != 200 )); then
+        error "Failed get baremetal agent uri, $baremetal_agent_uri_resp"
+        exit 1
+    fi
+    baremetal_agent_uri=${baremetal_agent_uri_resp_arr[0]}
+    info "baremetal agent: $baremetal_agent_uri"
 
     if [ -z $ssh_password ]; then
         ssh_password="yunion@123"
@@ -157,14 +173,21 @@ function main() {
     check_and_set_port
     make_runc_exec_shell
 
+    # RUNC_CMD=$CUR_DIR/runc
+    # linux_first_kernel_version=`uname -r | cut -d. -f1`
+    # if (( linux_first_kernel_version == 2 )); then
+    #     # kernel version 2.x
+    #     RUNC_CMD=$CUR_DIR/runc_2
+    # fi
+    RUNC_CMD=$CUR_DIR/runns
+
     cd $CUR_DIR
-    $CUR_DIR/runc kill yunion_baremetal_prepare KILL
-    $CUR_DIR/runc delete yunion_baremetal_prepare
-    $CUR_DIR/runc run --no-new-keyring -d yunion_baremetal_prepare
+    $RUNC_CMD kill yunion_baremetal_prepare
+    $RUNC_CMD run yunion_baremetal_prepare
 
     # wait ssh port in use
     if ! wait_port_listening 60 ; then
-        echo "dropbear ssh server not started"
+        error "dropbear ssh server not started"
         exit_clean
         exit 1
     fi
@@ -174,26 +197,34 @@ function main() {
     $baremetal_agent_uri'/baremetals/register-baremetal' \
     -H 'Content-Type: application/json' -H "X-Auth-Token: $auth_token" \
     -d "$(generate_post_data)"`
-
-    resp=(${resp[@]})
-    http_code=${resp[-1]}
-    http_body=${resp[@]::${#resp[@]}-1}
-
-    if [ $http_code != "200" ]; then
-        echo $http_body
-        echo "Http register baremetal error, exit..."
+    # resp format: "{http baody content} http_code"
+    if [ -z "$resp" ]; then
+        error "Request regiester faild, empty response"
+        exit_clean
         exit 1
     fi
 
-    echo "Prepare SUCCESS waiting register, It takes a few minutes..."
+    # format resp as array
+    resp_arr=(${resp[@]})
+    # get response code
+    http_code=${resp_arr[${#resp_arr[@]}-1]}
+    # http_body=${resp_arr[@]::${#resp_arr[@]}-1}
+
+    if (( $http_code != "200" )); then
+        error "$resp"
+        exit_clean
+        error "Http register baremetal error, exit..."
+        exit 1
+    fi
+
+    info "Prepare SUCCESS waiting register, It takes a few minutes..."
     sleep 600
     exit_clean
 }
 
 #clean runc process
 function exit_clean() {
-    $CUR_DIR/runc kill yunion_baremetal_prepare KILL
-    $CUR_DIR/runc delete yunion_baremetal_prepare
+    $RUNC_CMD kill yunion_baremetal_prepare
 }
 
 main $@
