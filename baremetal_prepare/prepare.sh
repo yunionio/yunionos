@@ -109,6 +109,7 @@ $ssh_password
 MYEOF
 
 mkdir -p /etc/dropbear
+mkdir -p /var/run/dropbear
 dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key
 dropbear -F -p $ssh_port
 EOF
