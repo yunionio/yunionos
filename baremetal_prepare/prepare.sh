@@ -26,22 +26,17 @@ function check_ip() {
 }
 
 function getIpmiInfo(){
-    info "****** Enter the IPMI username password ip_addr ******"
+    info "****** Enter the IPMI username password ******"
     echo -n "Enter the IPMI username: "
     read username
     echo -n "Enter the IPMI password: "
-    read password1
+    read -s password1
+    echo ""
     echo -n 'Enter the IPMI password again: '
-    read password2
+    read -s password2
+    echo ""
     if [ "$password1" != "$password2" ]; then
         error "Password twice enter is not equal, exit..."
-        exit 1
-    fi
-    echo -n "Enter the IPMI ip: "
-    read ip_addr
-    check_ip $ip_addr
-    if [ $? -eq 1 ]; then
-        error "Ip addr is illegal, exit..."
         exit 1
     fi
 }
@@ -64,7 +59,7 @@ function confget() {
 function generate_post_data()
 {
 cat <<EOF
-{"username": "$username", "password": "$password1", "ip_addr": "$ip_addr", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME"}
+{"username": "$username", "password": "$password1", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME"}
 EOF
 }
 
@@ -125,9 +120,8 @@ function prepare_rootfs() {
 
 function get_baremetal_agent_uri() {
     local region=$1
-    local filter_ip=$2
-    local token=$3
-    http_resp=`curl -k -s -w "\n%{http_code}" -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url?ip='$filter_ip`
+    local token=$2
+    http_resp=`curl -k -s -w "\n%{http_code}" -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url'`
     echo $http_resp
 }
 
@@ -153,7 +147,7 @@ function main() {
         exit 1
     fi
 
-    baremetal_agent_uri_resp=$(get_baremetal_agent_uri $region_uri $ip_addr $auth_token)
+    baremetal_agent_uri_resp=$(get_baremetal_agent_uri $region_uri $auth_token)
     if [ -z "$baremetal_agent_uri_resp" ]; then
         error "Failed get baremetal agent uri, empty response"
         exit 1
@@ -209,23 +203,46 @@ function main() {
     resp_arr=(${resp[@]})
     # get response code
     http_code=${resp_arr[${#resp_arr[@]}-1]}
-    # http_body=${resp_arr[@]::${#resp_arr[@]}-1}
-
     if (( $http_code != "200" )); then
         error "$resp"
         exit_clean
         error "Http register baremetal error, exit..."
         exit 1
     fi
-
     info "Prepare SUCCESS waiting register, It takes a few minutes..."
-    sleep 600
+    bm_id=${resp_arr[0]}
+    info "baremetal instance id: "$bm_id
+    wait_bm_status_running $bm_id $region_uri $auth_token 600
     exit_clean
 }
 
 #clean runc process
 function exit_clean() {
     $RUNC_CMD kill yunion_baremetal_prepare
+}
+
+function wait_bm_status_running() {
+    local bm_id=$1
+    local region=$2
+    local token=$3
+    local timeout=$4
+    for i in `seq 0 5 $timeout`; do
+        sleep 5
+        status_resp=`curl -k -s -w "\n%{http_code}" -X GET -H "X-Auth-Token: $token" $region"/hosts/$bm_id/status"`
+        status=${status_resp[0]}
+        case $status in
+            *running*)
+                info "baremteal is running"
+                return 0
+                    ;;
+             *fail*)
+                error "baremetal status contains fail"
+                return 1
+                    ;;
+        esac
+    done
+    error "query baremetal status timeout"
+    return 1
 }
 
 main $@
