@@ -59,7 +59,7 @@ function confget() {
 function generate_post_data()
 {
 cat <<EOF
-{"username": "$username", "password": "$password1", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME"}
+{"username": "$username", "password": "$password1", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME", "ssh_ip": "$ssh_ip"}
 EOF
 }
 
@@ -121,7 +121,7 @@ function prepare_rootfs() {
 function get_baremetal_agent_uri() {
     local region=$1
     local token=$2
-    http_resp=`curl -k -s -w "\n%{http_code}" -X GET -H "X-Auth-Token: $token" $region'/misc/bm-agent-url'`
+    http_resp=`curl -k -s -w "\n%{http_code}" -X GET -H "X-Auth-Token: $token" "$region/misc/bm-agent-url?ssh_ip=$ssh_ip"`
     echo $http_resp
 }
 
@@ -136,6 +136,11 @@ function main() {
 
     CONFIG_FILE=$CUR_DIR/baremetal_prepare.conf
     HOSTNAME=`hostname | cut -d . -f 1`
+    ssh_ip=$(ip route get 1 | awk '{print $NF;exit}')
+    if ! `check_ip $ssh_ip`; then
+        error "Failed get ip address"
+        exit 1
+    fi
     # baremetal_agent_uri=$1
     auth_token=$1
     region_uri=$2
