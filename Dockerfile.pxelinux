@@ -1,0 +1,20 @@
+FROM archlinux:base-devel-20210530.0.24217 as syslinux-stage
+RUN echo 'Server = http://mirrors.163.com/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+RUN pacman -Syy
+RUN pacman --noconfirm -S syslinux
+
+FROM scratch AS export-stage
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/chain.c32 .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/isolinux.bin .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/ldlinux.c32 .
+COPY --from=syslinux-stage /usr/lib/syslinux/efi32/ldlinux.e32 .
+COPY --from=syslinux-stage /usr/lib/syslinux/efi64/ldlinux.e64 .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/libcom32.c32 .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/libutil.c32 .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/lpxelinux.0 .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/menu.c32 .
+COPY --from=syslinux-stage /usr/lib/syslinux/bios/pxelinux.0 .
+
+COPY --from=syslinux-stage /usr/lib/syslinux/efi32/syslinux.efi ./bootia32.efi
+COPY --from=syslinux-stage /usr/lib/syslinux/efi64/syslinux.efi ./bootx64.efi
+
