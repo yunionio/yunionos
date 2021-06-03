@@ -14,6 +14,9 @@ KERNEL_3_10_0_RPM ?= kernel-3.10.0-1160.6.1.el7.yn20201125.x86_64.rpm
 download-kernel-rpm:
 	wget https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-5.12.9-1.el7.elrepo.x86_64.rpm
 
+download-kernel-3-10-rpm:
+	wget https://iso.yunion.cn/3.7/rpms/packages/kernel/kernel-3.10.0-1160.6.1.el7.yn20201125.x86_64.rpm
+
 pxelinux-update:
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.pxelinux --output ./pxelinux .
 

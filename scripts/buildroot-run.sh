@@ -28,14 +28,20 @@ BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:2017.02.11-0"
 cp $(pwd)/rootfs/buildroot_conf/rootfs.201702.11-5.conf $(pwd)/output/.config
 cp $(pwd)/rootfs/buildroot_conf/busybox-config-20180809 $(pwd)/output/
 
+# DOCKER_RUN="docker run
+    # --rm
+    # -ti
+    # -u $(id -u ${USER}):$(id -g ${USER})
+    # -v $(pwd)/data:$BUILDROOT_DIR/data
+    # -v $(pwd)/external:$BUILDROOT_DIR/external
+    # -v $(pwd)/rootfs_overlay:$BUILDROOT_DIR/rootfs_overlay
+    # -v $(pwd)/images:$BUILDROOT_DIR/images
+    # -v $(pwd)/output:$OUTPUT_DIR
+    # ${BUILDROOT_IMG}"
+
 DOCKER_RUN="docker run
     --rm
     -ti
-    -u $(id -u ${USER}):$(id -g ${USER})
-    -v $(pwd)/data:$BUILDROOT_DIR/data
-    -v $(pwd)/external:$BUILDROOT_DIR/external
-    -v $(pwd)/rootfs_overlay:$BUILDROOT_DIR/rootfs_overlay
-    -v $(pwd)/images:$BUILDROOT_DIR/images
     -v $(pwd)/output:$OUTPUT_DIR
     ${BUILDROOT_IMG}"
 
