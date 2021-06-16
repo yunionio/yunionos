@@ -1,0 +1,59 @@
+# ref: https://github.com/AdvancedClimateSystems/docker-buildroot/blob/master/Dockerfile
+
+FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+    build-essential \
+    bash \
+    bc \
+    binutils \
+    build-essential \
+    bzip2 \
+    cpio \
+    g++ \
+    gcc \
+    git \
+    gzip \
+    locales \
+    libncurses5-dev \
+    libdevmapper-dev \
+    libsystemd-dev \
+    make \
+    mercurial \
+    whois \
+    patch \
+    perl \
+    python \
+    rsync \
+    sed \
+    tar \
+    vim \ 
+    unzip \
+    wget \
+    bison \
+    flex \
+    libssl-dev \
+    libfdt-dev
+
+# Sometimes Buildroot need proper locale, e.g. when using a toolchain
+# based on glibc.
+RUN locale-gen en_US.utf8
+
+RUN git clone https://github.com/buildroot/buildroot --depth=1 --branch=2017.02.11 /root/buildroot
+
+WORKDIR /root/buildroot
+
+ENV O=/buildroot_output
+
+ADD ./rootfs/buildroot_conf/rootfs.201702.11-4.conf /root/buildroot/.config
+ADD ./rootfs/buildroot_conf/busybox-config-20180809 /root/buildroot/
+
+#VOLUME /root/buildroot/dl
+#VOLUME /buildroot_output
+
+RUN apt install -y rpm2cpio kmod
+
+RUN ["/bin/bash"]

@@ -61,8 +61,16 @@ show_dev() {
     while [ ! -e $CTRLDEV/class ]; do
         CTRLDEV=$CTRLDEV/../
     done
-    local DRIVER=$(basename $(readlink -f $CTRLDEV/driver))
-    local CLS=$(cat $CTRLDEV/class)
+
+    local DRIVER="unknown"
+    if [ -e $CTRLDEV/driver ]; then
+        DRIVER=$(basename $(readlink -f $CTRLDEV/driver))
+    fi
+
+    local CLS="unknown"
+    if [ -f $CTRLDEV/class ]; then
+        CLS=$(cat $CTRLDEV/class)
+    fi
     echo $DEV $SIZE $SECTOR $ROTATE $DRIVER $CLS $VENDOR $MODEL $REV
 }
 

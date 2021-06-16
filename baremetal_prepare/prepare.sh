@@ -136,7 +136,7 @@ function main() {
 
     CONFIG_FILE=$CUR_DIR/baremetal_prepare.conf
     HOSTNAME=`hostname | cut -d . -f 1`
-    ssh_ip=$(ip route get 1 | awk '{print $NF;exit}')
+    ssh_ip=$(ip route get 1 | sed 's/^.*src \([^ ]*\).*$/\1/;q')
     if ! `check_ip $ssh_ip`; then
         error "Failed get ip address"
         exit 1
