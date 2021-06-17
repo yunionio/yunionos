@@ -1,4 +1,4 @@
-Cloudpos PXE／ISO ROM scripts
+Cloudpods PXE／ISO ROM scripts
 ===============================
 
 ## 使用方法
