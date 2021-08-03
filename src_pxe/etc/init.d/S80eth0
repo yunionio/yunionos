@@ -15,6 +15,12 @@ case "$1" in
                     echo "Initialize $dev ..."
                     TRIES=12
                     if [ -n "$addr" ]; then
+                        if [ -n "$mac" ]; then
+                            dev_mac=$(cat /sys/class/net/$dev/address)
+                            if [ "$mac" != "$dev_mac" ]; then
+                                continue
+                            fi
+                        fi
                         /sbin/ifconfig $dev $addr netmask $mask
                         /sbin/ip route add default via $gateway
                         sleep 1
