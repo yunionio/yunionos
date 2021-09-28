@@ -86,7 +86,7 @@ is_raid_controller() {
         return 0
     else
         case $DRIVER in
-        megaraid_sas|hpsa|cciss|mpt2sas|mpt3sas)
+        megaraid_sas|hpsa|cciss|mpt2sas|mpt3sas|aacraid|smartpqi)
             return 0
             ;;
         *)
@@ -123,6 +123,20 @@ is_removable() {
     return 0
 }
 
+is_aacraid_dev() {
+    local DEV=$1
+    local CTRLDEV=$SYSPATH/$DEV/../../../../../
+    local DRIVER="unknown"
+    if [ -e $CTRLDEV/driver ]; then
+        DRIVER=$(basename $(readlink -f $CTRLDEV/driver))
+    fi
+    if [ "x$DRIVER" == "xaacraid" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 show_nonraid_devs() {
     for dev in $(ls $SYSPATH)
     do
@@ -135,7 +149,7 @@ show_nonraid_devs() {
 show_raid_devs() {
     for dev in $(ls $SYSPATH)
     do
-        if is_scsi $dev && is_device $dev && ! is_removable $dev && is_raid_controller $dev; then
+        if is_scsi $dev && is_device $dev && ( ! is_removable $dev || is_aacraid_dev $dev ) && is_raid_controller $dev; then
             show_dev $dev
         fi
     done
