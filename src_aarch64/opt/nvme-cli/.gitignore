@@ -1,0 +1,9 @@
+etc
+*.gz
+*.xz
+usr
+.BUILDINFO
+.INSTALL
+.MTREE
+.PKGINFO
+

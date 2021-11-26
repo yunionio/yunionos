@@ -21,12 +21,26 @@
 # ./run.sh make
 set -e
 
-OUTPUT_DIR=/buildroot_output
+BUILDROOT_VERSION=2021.08.2
 BUILDROOT_DIR=/root/buildroot
-BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:2017.02.11-0"
+BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-0"
+TARGET_ARCH=${TARGET_ARCH:-x86_64}
+OUTPUT_DIR=/buildroot_output
+OUTPUT_HOST_DIR=output
 
-cp $(pwd)/rootfs/buildroot_conf/rootfs.201702.11-5.conf $(pwd)/output/.config
-cp $(pwd)/rootfs/buildroot_conf/busybox-config-20180809 $(pwd)/output/
+BUILDROOT_CONFIG=rootfs-x86_64.$BUILDROOT_VERSION-0.conf
+
+if [ $TARGET_ARCH == "aarch64" ]; then
+    BUILDROOT_CONFIG=rootfs-aarch64.$BUILDROOT_VERSION-0.conf
+    OUTPUT_HOST_DIR=output_arm64
+fi
+
+mkdir -p $OUTPUT_HOST_DIR
+
+HOST_BUILDROOT_CONF_DIR=$(pwd)/rootfs/buildroot_conf
+
+cp $HOST_BUILDROOT_CONF_DIR/$BUILDROOT_CONFIG $(pwd)/$OUTPUT_HOST_DIR/.config
+cp $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809 $(pwd)/$OUTPUT_HOST_DIR/
 
 # DOCKER_RUN="docker run
     # --rm
@@ -42,7 +56,9 @@ cp $(pwd)/rootfs/buildroot_conf/busybox-config-20180809 $(pwd)/output/
 DOCKER_RUN="docker run
     --rm
     -ti
-    -v $(pwd)/output:$OUTPUT_DIR
+    -v $HOST_BUILDROOT_CONF_DIR/$BUILDROOT_CONFIG:/root/buildroot/.config
+    -v $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809:/root/buildroot/busybox-config-20180809
+    -v $(pwd)/$OUTPUT_HOST_DIR:$OUTPUT_DIR
     ${BUILDROOT_IMG}"
 
 make() {

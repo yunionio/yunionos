@@ -4,5 +4,4 @@
 *.rpm
 *.deb
 
-output/
-output_bundle/
+output*

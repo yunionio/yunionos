@@ -1,0 +1,24 @@
+#!/bin/sh
+
+mount() {
+    EFI_POINT="/sys/firmware/efi/efivars"
+    if [ ! -d "$EFI_POINT" ]; then
+        echo "Not UEFI boot system, skip mount"
+	return 0
+    fi
+    /bin/mount -t efivarfs efivarfs "$EFI_POINT"
+}
+
+case "$1" in
+    start)
+        mount
+        ;;
+    stop|restart|reload)
+        ;;
+    *)
+        echo "Usage: $0 {start}"
+        exit 1
+esac
+
+exit $?
+

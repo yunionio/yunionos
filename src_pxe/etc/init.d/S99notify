@@ -9,7 +9,7 @@ done
 
 PASS=$(cat /tmp/passwd)
 
-if wget -q --header "X-Auth-Token: $token" $url?key=$PASS; then
+if curl -k --header "X-Auth-Token: $token" $url?key=$PASS; then
     echo "Notify baremetal-agent successfully"
 else
     echo "Fail to notify baremetal-agent, reset root password to default"

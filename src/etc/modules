@@ -1,7 +1,13 @@
 acpiphp
 ext4
+crc16
+crc32c_generic
+crc32_generic
+crc32c-intel
+libcrc32c
 xfs
 vfat
+efivarfs
 sd_mod
 ipmi_msghandler
 ipmi_devintf
@@ -43,3 +49,17 @@ bnx2x
 aacraid
 smartpqi
 bnxt_en
+
+# hisilicon
+hip04_eth
+hisi_femac
+hix5hd2_gmac
+hnae
+hns_dsaf
+hns_enet_drv
+hnae3
+hns3
+hclge
+hclgevf
+hns_mdio
+hinic
