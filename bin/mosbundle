@@ -67,6 +67,7 @@ kpkg_in=${2}
 out_d_in=${3}
 src_type_in=${4}
 kpkg_in2=${5}
+src_arch_in=${ARCH:-x86_64}
 
 if [ -z "$src_type_in" ]; then
 	src_type_in=pxe
@@ -76,7 +77,10 @@ PATH="$topdir/bin:$PATH"
 src_dir="${topdir}/src"
 src2_dir=""
 if [ -n "$src_type_in" ]; then
-  src2_dir="${topdir}/src_${src_type_in}"
+    src2_dir="${topdir}/src_${src_type_in}"
+fi
+if [ -n "$src_arch_in" ]; then
+	src3_dir="${topdir}/src_${src_arch_in}"
 fi
 src_symlinks="${topdir}/symlinks.list"
 makedevs_list="${topdir}/makedevs.list"
@@ -233,7 +237,7 @@ tar -C "${kernel_d}" -cpf - \
 	--files-from "${kern_files}" > "${kernel_tar}" ||
 	fail "failed to collect kernel files"
 
-for src in "$src_dir" "$src2_dir"
+for src in "$src_dir" "$src2_dir" "$src3_dir"
 do
   debug 1 "preparing source overlay from ${src}"
   xrsync "${src}/" "${overlay_d}" || fail "failed to copy source dir"
