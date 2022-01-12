@@ -63,3 +63,9 @@ hclge
 hclgevf
 hns_mdio
 hinic
+
+# mellanox
+mlx4_core
+mlx4_en
+mlx5_core
+mlxfw
