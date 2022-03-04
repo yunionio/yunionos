@@ -114,13 +114,31 @@ is_scsi() {
     fi
 }
 
-is_removable() {
+is_usb() {
+    local DEV=$1
+    readlink -f $DEV | grep -q usb
+    if [ $? -eq 0 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+_is_removable() {
     local DEV=$1
     REMOVABLE=$(cat $SYSPATH/$dev/removable)
     if [ "$REMOVABLE" -eq "0" ]; then
         return 1
     fi
     return 0
+}
+
+is_removable() {
+    local DEV=$1
+    if _is_removable $DEV && is_usb $DEV; then
+        return 0
+    fi
+    return 1
 }
 
 is_aacraid_dev() {

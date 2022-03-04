@@ -36,9 +36,11 @@ virtio
 cdrom
 sr_mod
 ahci
+libahci
 isofs
 mptspi
 nvme
+nvme-core
 shannon
 i40e
 sg
