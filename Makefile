@@ -79,3 +79,10 @@ YUNIONOS_VERSION = "v0.1.4"
 docker-yunionos-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION) -f ./Dockerfile.yunionos .
+
+extract-bundle-rootfs:
+	sudo make -C images extract-bundle-rootfs-amd64
+	sudo make -C images extract-bundle-rootfs-arm64
+
+docker-yunion-rootfs-image: extract-bundle-rootfs
+	sudo make -C images docker-yunion-rootfs-image

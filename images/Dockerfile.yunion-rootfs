@@ -1,0 +1,5 @@
+FROM --platform=$TARGETPLATFORM scratch
+ARG TARGETPLATFORM
+ARG TARGETARCH
+
+ADD output_rootfs/${TARGETARCH} /
