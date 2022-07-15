@@ -71,3 +71,6 @@ mlx4_core
 mlx4_en
 mlx5_core
 mlxfw
+
+# devicemap & lvm
+dm-mod
