@@ -17,9 +17,6 @@ while [ "$CONFIGPROC" == "yes" ]
 do
 #############################################################
 
-echo "# io    Cloud Installation #"
-echo "######################################################"
-echo ""
 echo "Prepare disk ..."
 
 RAID=$(detect_raid)
