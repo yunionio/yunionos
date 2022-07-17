@@ -17,16 +17,7 @@ while [ "$CONFIGPROC" == "yes" ]
 do
 #############################################################
 
-echo ""
-echo "######################################################"
-echo "#                                                    #"
-echo "#    YY  YY             OO               OO          #"
-echo "#    YY  YY                                          #"
-echo "#      YY   UU UU  NNN  II  OOO   NNN    II  OOO     #"
-echo "#      YY   UU UU NN NN II OO OO NN NN   II OO OO    #"
-echo "#      YY    UUU  NN NN II  OOO  NN NN O II  OOO     #"
-echo "#                                                    #"
-echo "# https://www.yunion.io    Yunion Cloud Installation #"
+echo "# io    Cloud Installation #"
 echo "######################################################"
 echo ""
 echo "Prepare disk ..."
@@ -265,7 +256,7 @@ if [ "$ROLE" == "controller" ]; then
 
   echo ""
 
-  echo "Yunion Cloud settings:"
+  echo "Cloud settings:"
   echo "  Region: $REGION"
   echo "  Zone: $ZONE"
   echo "  Hostname: $HOSTNAME"
@@ -455,7 +446,7 @@ PEERDNS=yes
 DNS1=$DNS
 DOMAIN=$DOMAIN" > $ROOTFS/etc/sysconfig/network-scripts/ifcfg-$NIC
 
-echo "Configure yunion password ..."
+echo "Configure password ..."
 
 chroot $ROOTFS passwd yunion << EOF
 $ROOT_PASS

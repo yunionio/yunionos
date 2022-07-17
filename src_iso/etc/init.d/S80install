@@ -1,17 +1,17 @@
 #!/bin/sh
 
 install_master() {
-    echo "Install Yunion Cloud Master ..."
+    echo "Install Cloud Master ..."
     /lib/yunion/install.sh controller
 }
 
 install_kvm() {
-    echo "Install Yunion Cloud KVM host ..."
+    echo "Install Cloud KVM host ..."
     /lib/yunion/install.sh host
 }
 
 install_kubelet() {
-    echo "Install Yunion Cloud Kubelet host ..."
+    echo "Install Cloud Kubelet host ..."
     /lib/yunion/install.sh host
 }
 
