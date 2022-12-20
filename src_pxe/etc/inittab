@@ -14,6 +14,10 @@
 # process   == program to run
 
 # Startup the system
+#::sysinit:/bin/ln -sf /proc/self/fd /dev/fd
+#::sysinit:/bin/ln -sf /proc/self/fd/0 /dev/stdin
+#::sysinit:/bin/ln -sf /proc/self/fd/1 /dev/stdout
+#::sysinit:/bin/ln -sf /proc/self/fd/2 /dev/stderr
 # now run any rc scripts
 ::sysinit:/etc/init.d/rcS
 

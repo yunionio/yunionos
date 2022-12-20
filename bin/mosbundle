@@ -149,6 +149,13 @@ case $kpkg_in in
         (test -z "${kpkg_in2}" || (rpm2cpio "${kpkg_in}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp)) ||
 	    fail "failed to extract kernel to ${kernel_d}"
         ;;
+    *.pkg.tar.zst)
+		mkdir -p "${kernel_d}"
+        tar --use-compress-program=unzstd -xf "${kpkg_in}" -C "${kernel_d}" && 
+        ln -s "${kernel_d}/usr/lib/modules/5.15.83-1-lts" "${kernel_d}/boot" && 
+        ln -s "${kernel_d}/usr/lib" "${kernel_d}/lib" ||
+        fail "failed to extract kernel to ${kernel_d}"
+        ;;
 esac
 
 if [ -n "$firmware_in" ]; then
@@ -181,6 +188,7 @@ if [ -n "$extra_modules_dir" ]; then
 fi
 
 find ${kernel_d} -type f -name '*.ko.xz' | xargs xz -d
+find ${kernel_d} -type f -name '*.ko.zst' | xargs unzstd
 
 depmod -a --basedir "${kernel_d}" "${kver}" ||
 	fail "failed to run depmod"
@@ -221,11 +229,11 @@ fi
 
 fi
 
-vmlinuz=$( cd "${kernel_d}" && [ -f boot/vmlinuz-* ] &&
-	echo boot/vmlinuz-* ) && echo "${vmlinuz}" >> "${kern_files}" &&
+vmlinuz=$( cd "${kernel_d}" && [ -f boot/vmlinuz* ] &&
+	echo boot/vmlinuz* ) && echo "${vmlinuz}" >> "${kern_files}" &&
 	ln -sf "$vmlinuz" "$kernel_d/vmlinuz" && echo "vmlinuz" >> "$kern_files" ||
-	fail "no kernel (boot/vmlinuz-*) found in ${kpkg_in}"
-echo "boot/config-$kver" >> "$kern_files"
+	fail "no kernel (boot/vmlinuz*) found in ${kpkg_in}"
+#echo "boot/config-$kver" >> "$kern_files"
 echo "lib/modules/$kver/modules.order" >> "$kern_files"
 echo "lib/modules/$kver/modules.builtin" >> "$kern_files"
 
