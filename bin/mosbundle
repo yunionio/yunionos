@@ -163,6 +163,9 @@ if [ -n "$firmware_in" ]; then
 		*.rpm)
 			(rpm2cpio "${firmware_in}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp)
 			;;
+		*.deb)
+			dpkg -x "${firmware_in}" "${kernel_d}"
+			;;
 	esac
 fi
 
@@ -225,6 +228,7 @@ find ${kernel_d}/lib/modules/${kver}/ -type f | sed "s|${kernel_d}/||" | grep -e
 
 if [ -n "$firmware_in" ]; then
   find ${kernel_d}/usr/lib/firmware/ -type f | sed "s|${kernel_d}/||" | sort -u > "${kern_files}"
+  find ${kernel_d}/lib/firmware/ -type f | sed "s|${kernel_d}/||" | sort -u > "${kern_files}"
 fi
 
 fi

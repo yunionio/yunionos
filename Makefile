@@ -29,6 +29,9 @@ download-kernel-5-12-9-rpm:
 download-kernel-3-10-rpm:
 	wget https://iso.yunion.cn/3.7/rpms/packages/kernel/kernel-3.10.0-1160.6.1.el7.yn20201125.x86_64.rpm
 
+download-debian-firmware:
+	wget https://mirrors.aliyun.com/debian/pool/non-free/f/firmware-nonfree/firmware-bnx2_20221214-2_all.deb
+
 download-kernel-arm-5-deb:
 	wget https://mirrors.aliyun.com/debian/pool/main/l/linux-signed-arm64/$(KERNEL_ARM_5_DEB)
 
@@ -49,11 +52,13 @@ docker-buildroot:
 docker-buildroot-arm64:
 	TARGET_ARCH=aarch64 ./scripts/buildroot-run.sh make
 
+BUNDLE_PXE_CMD = ./bin/mosbundle -f ./firmware-bnx2_20221214-2_all.deb
+
 bundle-pxe:
-	./bin/mosbundle -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_5_DEB) $(BUNDLE_OUTPUT_DIR) pxe
+	 $(BUNDLE_PXE_CMD) -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_5_DEB) $(BUNDLE_OUTPUT_DIR) pxe
 
 bundle-pxe-arm64:
-	ARCH=aarch64 ./bin/mosbundle ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_5_DEB) $(BUNDLE_OUTPUT_DIR_ARM64) pxe
+	ARCH=aarch64 $(BUNDLE_PXE_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_5_DEB) $(BUNDLE_OUTPUT_DIR_ARM64) pxe
 
 docker-bundle:
 	./scripts/bundle-run.sh
@@ -76,7 +81,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v0.1.7"
+YUNIONOS_VERSION = "v0.1.7-test"
 
 docker-yunionos-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \

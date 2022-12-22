@@ -39,6 +39,7 @@ e1000
 e1000e
 tg3
 bnx2
+bnx2x
 virtio_net
 virtio_scsi
 virtio_pci
@@ -60,7 +61,6 @@ sg
 # usb-storage
 ata_piix
 fuse
-bnx2x
 aacraid
 smartpqi
 bnxt_en
