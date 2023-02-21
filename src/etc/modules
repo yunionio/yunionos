@@ -37,6 +37,7 @@ ixgbe
 igb
 e1000
 e1000e
+ice
 tg3
 bnx2
 bnx2x
