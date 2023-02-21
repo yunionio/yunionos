@@ -10,8 +10,15 @@ if [ $TARGET_ARCH == aarch64 ]; then
     rule=bundle-pxe-arm64
 fi
 
+DEFAULT_CMD="make -C /yunionos $rule"
+
+if [[ $1 == "bash" ]]; then
+    DEFAULT_CMD="bash"
+fi
+
 docker run \
     --rm \
     -ti \
     -v $(pwd):/yunionos \
-    ${BUILDROOT_IMG} make -C /yunionos $rule
+    -w /yunionos \
+    ${BUILDROOT_IMG} $DEFAULT_CMD
