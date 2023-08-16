@@ -91,7 +91,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v0.1.8-20230221.2"
+YUNIONOS_VERSION = "v0.1.8-20230812.0"
 
 docker-yunionos-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \
