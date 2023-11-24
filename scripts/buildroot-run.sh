@@ -56,6 +56,7 @@ cp $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809 $(pwd)/$OUTPUT_HOST_DIR/
 DOCKER_RUN="docker run
     --rm
     -ti
+    --network host
     -v $HOST_BUILDROOT_CONF_DIR/$BUILDROOT_CONFIG:/root/buildroot/.config
     -v $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809:/root/buildroot/busybox-config-20180809
     -v $(pwd)/$OUTPUT_HOST_DIR:$OUTPUT_DIR
