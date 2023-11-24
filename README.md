@@ -33,7 +33,7 @@ $ ls ./output/rootfs.tar
 
 buildroot 的配置是在 docker 里面做的, 使用 ./scripts/buildroot-run.sh 脚本会启动 buildroot 编译环境, 可以把配置修改后, 再从容器里面拷贝出来.
 
-建议看下 `./scripts/bundle-run.sh` 脚本的逻辑和 `make docker-buildroot/docker-buildroot-arm64` 的调用关系.
+建议看下 `./scripts/buildroot-run.sh` 脚本的逻辑和 `make docker-buildroot/docker-buildroot-arm64` 的调用关系.
 
 ```bash
 # 手动进入 buildroot 容器, 配置 buildroot config
@@ -42,7 +42,7 @@ $ ./scripts/buildroot-run.sh
 $ make menuconfig
 
 # 如果是要进入 arm64 容器
-$ TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
+$ TARGET_ARCH=aarch64 ./scripts/buildroot-run.sh
 
 # 然后修改完配置后保存到容器里面的 /tmp/config 
 # 回到容器外, 用 docker cp 把对应的配置拷贝主来
