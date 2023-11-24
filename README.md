@@ -19,11 +19,40 @@ $ make buildroot-image
 有了 buildroot 的镜像后，使用该镜像启动容器编译 rootfs，命令如下：
 
 ```bash
-# 制作 rootfs
+# 制作 x86_64 rootfs
 $ make docker-buildroot
+
+# 制作 arm64 rootfs
+$ make docker-buildroot-arm64
 
 # 查看制作好的镜像
 $ ls ./output/rootfs.tar
+```
+
+### 配置 buildroot config
+
+buildroot 的配置是在 docker 里面做的, 使用 ./scripts/buildroot-run.sh 脚本会启动 buildroot 编译环境, 可以把配置修改后, 再从容器里面拷贝出来.
+
+建议看下 `./scripts/bundle-run.sh` 脚本的逻辑和 `make docker-buildroot/docker-buildroot-arm64` 的调用关系.
+
+```bash
+# 手动进入 buildroot 容器, 配置 buildroot config
+# 进入 buildroot bash
+$ ./scripts/buildroot-run.sh
+$ make menuconfig
+
+# 如果是要进入 arm64 容器
+$ TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
+
+# 然后修改完配置后保存到容器里面的 /tmp/config 
+# 回到容器外, 用 docker cp 把对应的配置拷贝主来
+$ DOCKER_BUILDROOT_id=$(docker ps | grep buildroot | awk '{print $1}')
+# 覆盖当前的x86_64配置
+# 如果是 arm64 的配置则在 ./rootfs/buildroot_conf/rootfs-aarch64.2021.08.2-0.conf
+$ docker cp $DOCKER_BUILDROOT_id:/tmp/config rootfs/buildroot_conf/rootfs-x86_64.2021.08.2-0.conf
+
+# 执行 git diff 查看更改
+$ git diff
 ```
 
 ### Bundle 所有文件
