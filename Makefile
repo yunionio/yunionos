@@ -19,9 +19,9 @@ KERNEL_ARM_5_DEB ?= linux-image-5.19.0-0.deb11.2-arm64_5.19.11-1~bpo11+1_arm64.d
 
 KERNEL_AMD64_5_DEB ?= linux-image-5.19.0-0.deb11.2-amd64_5.19.11-1~bpo11+1_amd64.deb
 
-KERNEL_ARM_6_DEB ?= linux-image-6.0.0-6-arm64_6.0.12-1_arm64.deb
+KERNEL_ARM_6_DEB ?= linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
 
-KERNEL_AMD64_6_DEB ?= linux-image-6.0.0-6-amd64_6.0.12-1_amd64.deb
+KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
 
 download-kernel-rpm:
 	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/$(KERNEL_5_14_15_RPM)
@@ -62,7 +62,7 @@ docker-buildroot:
 docker-buildroot-arm64:
 	TARGET_ARCH=aarch64 ./scripts/buildroot-run.sh make
 
-BUNDLE_PXE_CMD = ./bin/mosbundle -f ./firmware-bnx2x_20221214-2_all.deb
+BUNDLE_PXE_CMD = ./bin/mosbundle -f ./firmware-bnx2x_20210315-3_all.deb
 
 bundle-pxe:
 	 $(BUNDLE_PXE_CMD) -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR) pxe
@@ -91,7 +91,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v0.1.8-20230812.0"
+YUNIONOS_VERSION = "v0.1.9-20231129.0"
 
 docker-yunionos-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \
