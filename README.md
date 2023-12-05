@@ -26,7 +26,11 @@ $ make docker-buildroot
 $ make docker-buildroot-arm64
 
 # 查看制作好的镜像
-$ ls ./output/rootfs.tar
+# x86_64
+$ ls ./output/images/rootfs.tar
+
+# arm64
+$ ls ./output_arm64/images
 ```
 
 ### 配置 buildroot config
@@ -71,13 +75,25 @@ kernel-ml-5.12.9-1.el7.elrepo.x86_64.rpm
 然后执行下面的命令进行 bundle：
 
 ```bash
+# bundle x86_64
 $ make docker-bundle
+# bundle arm64
+$ make docker-bundle-arm64
 
-# 生成的文件会在 ./output_bundle
+# 或者执行 docker-bundle-all
+$ make docker-bundle-all
+
+# 生成的文件会在 ./output_bundle 和 ./output_bundle_arm64
 $ ls output_bundle
 baremetal_prepare         bootx64.efi  intermediate  ldlinux.c32  libcom32.c32  menu.c32
 baremetal_prepare.tar.gz  chain.c32    isolinux.bin  ldlinux.e32  libutil.c32   pxelinux.0
 bootia32.efi              initramfs    kernel        ldlinux.e64  lpxelinux.0
+```
+
+### 将 bundle 文件做成 yunionos docker image
+
+```bash
+$ YUNIONOS_VERSION=test-version-20231205.2 make docker-yunionos-image
 ```
 
 ### 将 bundle 的文件做成 RPM
