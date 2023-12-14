@@ -61,7 +61,7 @@ docker-buildroot-arm64:
 
 BUNDLE_BM_CMD = ./bin/mosbundle -f ./firmware-bnx2x_20210315-3_all.deb  -r ./remove_files_list.txt
 
-BUNDLE_VM_CMD = ./bin/mosbundle -r ./vm_remove_files_list.txt
+BUNDLE_VM_CMD = ./bin/mosbundle -r ./vm_remove_files_list.txt -m ./vm_etc_modules
 
 bundle-pxe:
 	 $(BUNDLE_BM_CMD) -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR) pxe
@@ -81,9 +81,13 @@ docker-bundle:
 docker-bundle-arm64:
 	TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
 
-docker-bundle-vm:
+docker-bundle-vm-x86_64:
 	FOR_VM=true ./scripts/bundle-run.sh
+
+docker-bundle-vm-arm64:
 	FOR_VM=true TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
+
+docker-bundle-vm: docker-bundle-vm-x86_64 docker-bundle-vm-arm64
 
 docker-bundle-all: docker-bundle docker-bundle-arm64 docker-bundle-vm
 
@@ -100,7 +104,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v3.10.8-20231214.0"
+YUNIONOS_VERSION = "v3.10.8-20231214.3"
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:
