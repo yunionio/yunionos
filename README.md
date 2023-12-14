@@ -3,6 +3,23 @@ Cloudpods PXE／ISO ROM scripts
 
 ## 使用方法
 
+### 快速编译 yunionos image
+
+这里只说快速制作出 yunionos 容器镜像，其他详细步骤见后面的文档内容。
+
+1. 下载内核和firmware，本地有可跳过:
+
+```bash
+# 下载内核
+$ make download-kernel-6-deb
+```
+
+2. 制作 yunionos 镜像
+
+```bash
+$ make docker-yunionos-image-all
+```
+
 ### 编译 rootfs
 
 rootfs 使用 [buildroot](https://buildroot.org/) 工具进行编译。
@@ -62,22 +79,50 @@ $ git diff
 如果本地没有内核，先使用下面命令下载内核：
 
 ```bash
-$ make download-kernel-rpm
+$ make download-kernel-amd64-6-deb
+$ make download-kernel-arm6-deb
 
-$ ls kernel*
-kernel-ml-5.12.9-1.el7.elrepo.x86_64.rpm
+$ ls linux-image-6
+linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
+linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
 ```
 
 然后执行下面的命令进行 bundle：
 
 ```bash
+# bundle x86_64 物理机 pxe 启动的 initramfs
 $ make docker-bundle
 
-# 生成的文件会在 ./output_bundle
-$ ls output_bundle
-baremetal_prepare         bootx64.efi  intermediate  ldlinux.c32  libcom32.c32  menu.c32
-baremetal_prepare.tar.gz  chain.c32    isolinux.bin  ldlinux.e32  libutil.c32   pxelinux.0
-bootia32.efi              initramfs    kernel        ldlinux.e64  lpxelinux.0
+# bundle arm64 物理机 pxe 启动的 initramfs
+$ make docker-bundle-arm64
+
+# bundle x86_64 和arm64 轻量虚拟机的 initramfs
+$ make docker-bundle-vm
+```
+
+生成的文件会在 ./output_bundle* 目录，结构如下：
+
+- output_bundle: x86_64 物理机 pxe 启动
+- output_bundle_vm: x86_64 轻量级虚拟机启动
+- output_bundle_arm64: aarch64 物理机 pxe 启动
+- output_bundle_arm64_vm: aarch64 轻量级虚拟机启动
+
+```bash
+$ ls -alh output_bundle*/initramfs
+-rw-r--r-- 1 root root 71M Dec 14 14:03 output_bundle/initramfs
+-rw-r--r-- 1 root root 69M Dec 14 13:19 output_bundle_arm64/initramfs
+-rw-r--r-- 1 root root 43M Dec 14 13:37 output_bundle_arm64_vm/initramfs
+-rw-r--r-- 1 root root 45M Dec 14 13:36 output_bundle_vm/initramfs
+```
+
+### 将 initramfs 做成 yunionos 容器镜像
+
+```bash
+# 给物理机的镜像
+$ make docker-yunionos-image
+
+# 给虚拟机的镜像
+$ make docker-yunionos-image-vm
 ```
 
 ### 将 bundle 的文件做成 RPM

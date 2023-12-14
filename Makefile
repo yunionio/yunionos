@@ -6,7 +6,9 @@ BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-0
 BUILD_ROOT_OUTPUT_DIR = $(CURDIR)/output
 BUILD_ROOT_OUTPUT_DIR_ARM64 = $(CURDIR)/output_arm64
 BUNDLE_OUTPUT_DIR = $(CURDIR)/output_bundle
+BUNDLE_OUTPUT_DIR_VM = $(CURDIR)/output_bundle_vm
 BUNDLE_OUTPUT_DIR_ARM64 = $(CURDIR)/output_bundle_arm64
+BUNDLE_OUTPUT_DIR_ARM64_VM = $(CURDIR)/output_bundle_arm64_vm
 
 KERNEL_5_14_15_RPM ?= kernel-ml-5.14.15-1.el7.elrepo.x86_64.rpm
 
@@ -23,30 +25,25 @@ KERNEL_ARM_6_DEB ?= linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
 
 KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
 
-download-kernel-rpm:
-	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/$(KERNEL_5_14_15_RPM)
+# download-kernel-rpm:
+# 	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/$(KERNEL_5_14_15_RPM)
 
+# download-kernel-5-12-9-rpm:
+# 	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-5.12.9-1.el7.elrepo.x86_64.rpm
 
-download-kernel-5-12-9-rpm:
-	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/kernel-ml-5.12.9-1.el7.elrepo.x86_64.rpm
-
-download-kernel-3-10-rpm:
-	wget -c https://iso.yunion.cn/3.7/rpms/packages/kernel/kernel-3.10.0-1160.6.1.el7.yn20201125.x86_64.rpm
+# download-kernel-3-10-rpm:
+# 	wget -c https://iso.yunion.cn/3.7/rpms/packages/kernel/kernel-3.10.0-1160.6.1.el7.yn20201125.x86_64.rpm
 
 download-debian-firmware:
 	wget -c https://mirrors.aliyun.com/debian/pool/non-free/f/firmware-nonfree/firmware-bnx2x_20221214-2_all.deb
-
-download-kernel-arm-5-deb:
-	wget -c https://mirrors.aliyun.com/debian/pool/main/l/linux-signed-arm64/$(KERNEL_ARM_5_DEB)
-
-download-kernel-amd64-5-deb:
-	wget -c https://mirrors.aliyun.com/debian/pool/main/l/linux-signed-amd64/$(KERNEL_AMD64_5_DEB)
 
 download-kernel-arm-6-deb:
 	wget -c https://mirrors.aliyun.com/debian/pool/main/l/linux-signed-arm64/$(KERNEL_ARM_6_DEB)
 
 download-kernel-amd64-6-deb:
 	wget -c https://mirrors.aliyun.com/debian/pool/main/l/linux-signed-amd64/$(KERNEL_AMD64_6_DEB)
+
+download-kernel-6-deb: download-kernel-arm-6-deb download-kernel-amd64-6-deb
 
 pxelinux-update:
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.pxelinux --output ./pxelinux .
@@ -62,13 +59,21 @@ docker-buildroot:
 docker-buildroot-arm64:
 	TARGET_ARCH=aarch64 ./scripts/buildroot-run.sh make
 
-BUNDLE_PXE_CMD = ./bin/mosbundle -f ./firmware-bnx2x_20210315-3_all.deb
+BUNDLE_BM_CMD = ./bin/mosbundle -f ./firmware-bnx2x_20210315-3_all.deb  -r ./remove_files_list.txt
+
+BUNDLE_VM_CMD = ./bin/mosbundle -r ./vm_remove_files_list.txt
 
 bundle-pxe:
-	 $(BUNDLE_PXE_CMD) -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR) pxe
+	 $(BUNDLE_BM_CMD) -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR) pxe
+
+bundle-pxe-vm:
+	 $(BUNDLE_VM_CMD) ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR_VM) pxe
 
 bundle-pxe-arm64:
-	ARCH=aarch64 $(BUNDLE_PXE_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64) pxe
+	ARCH=aarch64 $(BUNDLE_BM_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64) pxe
+
+bundle-pxe-arm64-vm:
+	ARCH=aarch64 $(BUNDLE_VM_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64_VM) pxe
 
 docker-bundle:
 	./scripts/bundle-run.sh
@@ -76,7 +81,11 @@ docker-bundle:
 docker-bundle-arm64:
 	TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
 
-docker-bundle-all: docker-bundle docker-bundle-arm64
+docker-bundle-vm:
+	FOR_VM=true ./scripts/bundle-run.sh
+	FOR_VM=true TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
+
+docker-bundle-all: docker-bundle docker-bundle-arm64 docker-bundle-vm
 
 bundle-iso:
 	./bin/mosbundle -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_5_14_15_RPM) $(BUNDLE_OUTPUT_DIR) iso
@@ -91,11 +100,18 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v0.1.9-20231129.0"
+YUNIONOS_VERSION = "v3.10.8-20231214.0"
+YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION) -f ./Dockerfile.yunionos .
+
+docker-yunionos-image-vm:
+	docker buildx build --platform linux/arm64,linux/amd64 --push \
+		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_VM) -f ./Dockerfile.yunionos-vm .
+
+docker-yunionos-image-all: docker-buildroot docker-buildroot-arm64 docker-bundle-all docker-yunionos-image docker-yunionos-image-vm
 
 extract-bundle-rootfs:
 	sudo make -C images extract-bundle-rootfs-amd64

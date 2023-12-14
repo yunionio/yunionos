@@ -1,0 +1,2 @@
+usr/share/qemu
+usr/bin/qemu-system-*

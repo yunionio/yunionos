@@ -1,0 +1,25 @@
+FROM registry.cn-beijing.aliyuncs.com/yunionio/onecloud-base:v0.3.5
+
+RUN mkdir -p /yunionos/x86_64 && mkdir -p /yunionos/aarch64
+
+# ADD x86_64 kernel and initramfs
+ADD ./output_bundle_vm/kernel /yunionos/x86_64
+ADD ./output_bundle_vm/initramfs /yunionos/x86_64
+
+# ADD arm64 kernel and initramfs
+ADD ./output_bundle_arm64_vm/kernel /yunionos/aarch64
+ADD ./output_bundle_arm64_vm/initramfs /yunionos/aarch64
+
+# ADD syslinux firmwares
+ADD ./output_bundle/isolinux.bin /yunionos/x86_64
+ADD ./output_bundle/chain.c32 /yunionos/x86_64
+ADD ./output_bundle/ldlinux.c32 /yunionos/x86_64
+ADD ./output_bundle/ldlinux.e32 /yunionos/x86_64
+ADD ./output_bundle/ldlinux.e64 /yunionos/x86_64
+ADD ./output_bundle/libutil.c32 /yunionos/x86_64
+ADD ./output_bundle/libcom32.c32 /yunionos/x86_64
+ADD ./output_bundle/bootia32.efi /yunionos/x86_64
+ADD ./output_bundle/bootx64.efi /yunionos/x86_64
+ADD ./output_bundle/lpxelinux.0 /yunionos/x86_64
+ADD ./output_bundle/pxelinux.0 /yunionos/x86_64
+ADD ./output_bundle/menu.c32 /yunionos/x86_64
