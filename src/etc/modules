@@ -6,6 +6,7 @@ crc32_generic
 crc32c-intel
 libcrc32c
 xfs
+btrfs
 vfat
 efivarfs
 sd_mod
