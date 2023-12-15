@@ -23,6 +23,7 @@ ahci
 libahci
 isofs
 sg
+ata_piix
 fuse
 
 # devicemap & lvm
