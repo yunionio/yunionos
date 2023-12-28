@@ -117,12 +117,22 @@ $ ls -alh output_bundle*/initramfs
 
 ### 将 initramfs 做成 yunionos 容器镜像
 
+该镜像会包含 initrd 和 kernel 文件，主要是给 [baremetal-agent](https://github.com/yunionio/cloudpods/blob/master/build/docker/Dockerfile.baremetal-base#L4) 和 [host-deployer](https://github.com/yunionio/cloudpods/blob/master/build/docker/Dockerfile.host-deployer#L1) 组件使用。
+
 ```bash
 # 给物理机的镜像
 $ make docker-yunionos-image
 
 # 给虚拟机的镜像
 $ make docker-yunionos-image-vm
+```
+
+### 将 initramfs 做成 yunion-rootfs 镜像
+
+yunion-rootfs 镜像主要是给 [telegraf-raid-plugin](https://github.com/yunionio/cloudpods/blob/master/build/docker/Dockerfile.telegraf-raid-plugin) 使用。
+
+```bash
+$ make docker-yunion-rootfs-image
 ```
 
 ### 将 bundle 的文件做成 RPM

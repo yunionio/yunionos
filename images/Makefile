@@ -23,6 +23,8 @@ extract-bundle-rootfs-arm64:
 	(cd $(OUTPUT_ROOTFS_ARM64) && gunzip initramfs.gz && cpio -idmv < initramfs)
 	rm -rf $(OUTPUT_ROOTFS_ARM64)/initramfs
 
+VERSION = "v3.10-20231227.0"
+
 docker-yunion-rootfs-image:
 	docker buildx build --platform linux/arm64,linux/amd64 --push \
-		-t $(REGISTRY)/yunion-rootfs:v1.1 -f ./Dockerfile.yunion-rootfs .
+		-t $(REGISTRY)/yunion-rootfs:$(VERSION) -f ./Dockerfile.yunion-rootfs .
