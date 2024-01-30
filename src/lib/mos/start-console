@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if cat /proc/cmdline | grep -q yn_rescue_mode=true; then
+    /bin/login -f root
+else
+    /sbin/getty -L $@ 115200 vt100 # GENERIC_SERIAL
+fi
