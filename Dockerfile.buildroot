@@ -54,6 +54,10 @@ ENV O=/buildroot_output
 #VOLUME /root/buildroot/dl
 #VOLUME /buildroot_output
 
+# Copy package overrides for E2fsprogs 1.47.0
+COPY rootfs/package_overrides/e2fsprogs/e2fsprogs.mk /root/buildroot/package/e2fsprogs/
+COPY rootfs/package_overrides/e2fsprogs/e2fsprogs.hash /root/buildroot/package/e2fsprogs/
+
 RUN apt install -y rpm2cpio kmod
 
 RUN ["/bin/bash"]
