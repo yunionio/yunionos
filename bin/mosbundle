@@ -154,6 +154,10 @@ case $kpkg_in in
         dpkg -x "${kpkg_in}" "${kernel_d}" &&
         (test -z "${kpkg_in2}" || dpkg -x "${kpkg_in2}" "${kernel_d}") ||
 	    fail "failed to extract kernel to ${kernel_d}"
+
+        if test -d "${kernel_d}/usr/lib" && test ! -e "${kernel_d}/lib"; then
+            cp -rf "${kernel_d}/usr/lib" "${kernel_d}/lib"
+        fi
         ;;
     *.rpm)
         (rpm2cpio "${kpkg_in}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp) &&
