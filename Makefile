@@ -21,9 +21,9 @@ KERNEL_ARM_5_DEB ?= linux-image-5.19.0-0.deb11.2-arm64_5.19.11-1~bpo11+1_arm64.d
 
 KERNEL_AMD64_5_DEB ?= linux-image-5.19.0-0.deb11.2-amd64_5.19.11-1~bpo11+1_amd64.deb
 
-KERNEL_ARM_6_DEB ?= linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
+KERNEL_ARM_6_DEB ?= linux-image-6.1.0-39-arm64_6.1.148-1_arm64.deb
 
-KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
+KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-39-amd64_6.1.148-1_amd64.deb
 
 # download-kernel-rpm:
 # 	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/$(KERNEL_5_14_15_RPM)
