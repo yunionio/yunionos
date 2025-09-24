@@ -1,7 +1,7 @@
 BUILD_IMG = "yunionos-build-env:latest"
 REGISTRY = "registry.cn-beijing.aliyuncs.com/yunionio"
 BUILD_ROOT_VERSION = "2021.08.2"
-BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-0
+BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-1
 
 BUILD_ROOT_OUTPUT_DIR = $(CURDIR)/output
 BUILD_ROOT_OUTPUT_DIR_ARM64 = $(CURDIR)/output_arm64
@@ -21,9 +21,9 @@ KERNEL_ARM_5_DEB ?= linux-image-5.19.0-0.deb11.2-arm64_5.19.11-1~bpo11+1_arm64.d
 
 KERNEL_AMD64_5_DEB ?= linux-image-5.19.0-0.deb11.2-amd64_5.19.11-1~bpo11+1_amd64.deb
 
-KERNEL_ARM_6_DEB ?= linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
+KERNEL_ARM_6_DEB ?= linux-image-6.12.43+deb13-arm64_6.12.43-1_arm64.deb
 
-KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
+KERNEL_AMD64_6_DEB ?= linux-image-6.12.43+deb13-amd64_6.12.43-1_amd64.deb
 
 # download-kernel-rpm:
 # 	wget -c https://mirror.rackspace.com/elrepo/kernel/el7/x86_64/RPMS/$(KERNEL_5_14_15_RPM)
@@ -104,7 +104,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v3.10.12-20240905.0"
+YUNIONOS_VERSION = "v3.10.12-20250926.0"
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:
