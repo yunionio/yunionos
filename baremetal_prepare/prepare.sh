@@ -27,14 +27,18 @@ function check_ip() {
 
 function getIpmiInfo(){
     info "****** Enter the IPMI username password ******"
-    echo -n "Enter the IPMI username: "
+
+    printf "%-30s: " "Enter the IPMI username"
     read username
-    echo -n "Enter the IPMI password: "
+
+    printf "%-30s: " "Enter the IPMI password"
     read -s password1
     echo ""
-    echo -n 'Enter the IPMI password again: '
+
+    printf "%-30s: " "Enter the IPMI password again"
     read -s password2
     echo ""
+
     if [ "$password1" != "$password2" ]; then
         error "Password twice enter is not equal, exit..."
         exit 1
@@ -125,6 +129,25 @@ function get_baremetal_agent_uri() {
     echo $http_resp
 }
 
+function get_default_ip() {
+    ipv4=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '/src/ {print $7; exit}')
+
+    if [ -n "$ipv4" ]; then
+        echo "$ipv4"
+        return 0
+    fi
+
+    ipv6=$(ip -6 route get 2001:4860:4860::8888 2>/dev/null | grep -o 'src [0-9a-fA-F:]*' | awk '{print $2}')
+
+    if [ -n "$ipv6" ]; then
+        echo "$ipv6"
+        return 0
+    fi
+
+    return 1
+}
+
+
 function main() {
     info "*********** Register baremetal start ... ************"
 
@@ -136,11 +159,8 @@ function main() {
 
     CONFIG_FILE=$CUR_DIR/baremetal_prepare.conf
     HOSTNAME=`hostname | cut -d . -f 1`
-    ssh_ip=$(ip route get 1 | sed 's/^.*src \([^ ]*\).*$/\1/;q')
-    if ! `check_ip $ssh_ip`; then
-        error "Failed get ip address"
-        exit 1
-    fi
+    ssh_ip=$(get_default_ip)
+    info "get ssh ip $ssh_ip"
     # baremetal_agent_uri=$1
     auth_token=$1
     region_uri=$2
