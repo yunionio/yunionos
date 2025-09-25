@@ -21,7 +21,7 @@
 # ./run.sh make
 set -e
 
-BUILDROOT_VERSION=2021.08.2
+BUILDROOT_VERSION=2025.05.2
 BUILDROOT_DIR=/root/buildroot
 BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-0"
 TARGET_ARCH=${TARGET_ARCH:-x86_64}

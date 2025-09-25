@@ -1,6 +1,6 @@
 BUILD_IMG = "yunionos-build-env:latest"
 REGISTRY = "registry.cn-beijing.aliyuncs.com/yunionio"
-BUILD_ROOT_VERSION = "2021.08.2"
+BUILD_ROOT_VERSION = "2025.05.2"
 BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-0
 
 BUILD_ROOT_OUTPUT_DIR = $(CURDIR)/output
