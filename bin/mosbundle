@@ -122,7 +122,7 @@ inter_d="$out_d/intermediate"
 
 baremetal_prepare_d="$topdir/baremetal_prepare"
 out_baremetal_prepare_d="$out_d/baremetal_prepare"
-baremetal_root_fs="$out_baremetal_prepare_d/rootfs"
+baremetal_root_fs="$out_baremetal_prepare_d/$src_arch_in/rootfs"
 baremetal_prepare_out="$out_d/baremetal_prepare.tar.gz"
 
 kernel_d="${TEMP_D}/kernel"
@@ -335,9 +335,9 @@ if [ "$src_type_in" == "pxe" ]; then
     fail "failed to copy baremetal prepare dir"
   cp -rf $initramfs_d/* $baremetal_root_fs ||
     fail "failed to copy rootfs"
-  (cd "$out_baremetal_prepare_d" && tar -cpzf - *) > "$baremetal_prepare_out" ||
-    fail "failed to create baremetal_prepare.tar.gz"
-  echo "wrote ${baremetal_prepare_out}"
+  # (cd "$out_baremetal_prepare_d" && tar -cpzf - *) > "$baremetal_prepare_out" ||
+  #   fail "failed to create baremetal_prepare.tar.gz"
+  echo "wrote ${baremetal_root_fs}"
 fi
 
 if [ "$src_type_in" == "pxe" ]; then

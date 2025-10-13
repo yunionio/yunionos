@@ -95,7 +95,7 @@ bundle-iso:
 	./bin/mosbundle -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_5_14_15_RPM) $(BUNDLE_OUTPUT_DIR) iso
 
 make-rpm:
-	./bin/makerpm $(BUNDLE_OUTPUT_DIR)
+	./bin/makerpm $(BUNDLE_OUTPUT_DIR) $(BUNDLE_OUTPUT_DIR_ARM64)
 
 docker-make-rpm:
 	docker run --rm \
