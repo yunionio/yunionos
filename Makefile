@@ -104,7 +104,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v3.10.12-20250926.0"
+YUNIONOS_VERSION = "v3.10.12-20251030.1"
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:

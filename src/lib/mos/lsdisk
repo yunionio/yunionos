@@ -83,7 +83,11 @@ is_raid_controller() {
     local DRIVER=$(basename $(readlink -f $CTRLDEV/driver))
     local CLS=$(cat $CTRLDEV/class)
     if [ "$CLS" == "0x010400" ]; then
-        return 0
+        if [ "$DRIVER" == "ahci" ]; then
+            return 1
+        else
+            return 0
+        fi
     else
         case $DRIVER in
         megaraid_sas|hpsa|cciss|mpt2sas|mpt3sas|aacraid|smartpqi)
@@ -98,7 +102,7 @@ is_raid_controller() {
 
 is_device() {
     local DEV=$1
-    if [ -d $SYSPATH/$dev/device ]; then
+    if [ -d $SYSPATH/$DEV/device ]; then
         return 0
     else
         return 1
@@ -126,7 +130,7 @@ is_usb() {
 
 _is_removable() {
     local DEV=$1
-    REMOVABLE=$(cat $SYSPATH/$dev/removable)
+    REMOVABLE=$(cat $SYSPATH/$DEV/removable)
     if [ "$REMOVABLE" -eq "0" ]; then
         return 1
     fi
