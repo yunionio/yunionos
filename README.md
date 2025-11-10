@@ -138,6 +138,8 @@ $ make docker-yunion-rootfs-image
 ### 将 bundle 的文件做成 RPM
 
 ```bash
+# 注意如果要生成 baremetal_prepare.tar.gz 需要使用更低的内核，buildroot conf中选择 4.4 的内核来编译
+
 $ make docker-make-rpm
 
 $ ls output_bundle/x86_64/

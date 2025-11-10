@@ -66,6 +66,7 @@ fuse
 aacraid
 smartpqi
 bnxt_en
+vmd
 
 # hisilicon
 hip04_eth
@@ -87,5 +88,10 @@ mlx4_en
 mlx5_core
 mlxfw
 
-# devicemap & lvm
+# devicemap & lvm & multi-disk
 dm-mod
+md-mod
+raid0
+raid10
+raid1
+raid456

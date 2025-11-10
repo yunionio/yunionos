@@ -31,5 +31,10 @@ nls_cp437
 nls_iso8859-1
 nls_ascii
 
-# devicemap & lvm
+# devicemap & lvm & multi-disk
 dm-mod
+md-mod
+raid0
+raid10
+raid1
+raid456

@@ -2,14 +2,18 @@
 
 set -e
 
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+
 pushd $(dirname $(readlink -f "$BASH_SOURCE")) > /dev/null
 ROOT_DIR=$(cd .. && pwd)
 popd > /dev/null
 
 OUTPUT_DIR=$1
+ARM_BUNDLE_DIR=$2
 
-if [ -z "$OUTPUT_DIR" ]; then
-    echo "Usage: $0 <OUTPUT_DIR>"
+if [ -z "$OUTPUT_DIR" ] || [ -z "$ARM_BUNDLE_DIR" ]; then
+    echo "Usage: $0 <OUTPUT_DIR> <ARM_BUNDLE_DIR>"
     exit 1
 fi
 
@@ -19,6 +23,8 @@ PKG="baremetal-pxerom"
 
 PXEFILES="kernel initramfs bootia32.efi chain.c32 ldlinux.e32 libcom32.c32 menu.c32 bootx64.efi ldlinux.c32 ldlinux.e64 libutil.c32 pxelinux.0 lpxelinux.0 isolinux.bin"
 BAREMETAL_PREPARE_PKG="$OUTPUT_DIR/baremetal_prepare.tar.gz"
+ARM_ROOTFS="$ARM_BUNDLE_DIR/baremetal_prepare/aarch64/rootfs"
+X86_ROOTFS="$OUTPUT_DIR/baremetal_prepare/x86_64/rootfs"
 
 for f in $PXEFILES
 do
@@ -28,10 +34,23 @@ do
     fi
 done
 
-if [ ! -e "$BAREMETAL_PREPARE_PKG" ]; then
-    echo "$BAREMETAL_PREPARE_PKG not exists"
+if [ ! -d "$ARM_ROOTFS" ]; then
+    echo "$ARM_ROOTFS not exists"
     exit 1
 fi
+
+if [ ! -d "$X86_ROOTFS" ]; then
+    echo "$X86_ROOTFS not exists"
+    exit 1
+fi
+
+out_baremetal_prepare_d="$OUTPUT_DIR/baremetal_prepare"
+DEST_ARM_ROOTFS_DIR="$OUTPUT_DIR/baremetal_prepare/aarch64/"
+mkdir -p $DEST_ARM_ROOTFS_DIR || fail "failed to make arm rootfs dir"
+cp -rf $ARM_ROOTFS $DEST_ARM_ROOTFS_DIR
+
+(cd "$out_baremetal_prepare_d" && tar -cpzf - *) > "$BAREMETAL_PREPARE_PKG" ||
+    fail "failed to create baremetal_prepare.tar.gz"
 
 DEST_DIR=/opt/cloud/yunion/baremetal
 BAREMETAL_PREPARE_PKG_DIR=/opt/cloud/yunion/baremetal/baremetal-prepare
