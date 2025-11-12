@@ -1,6 +1,6 @@
-FROM registry.cn-beijing.aliyuncs.com/yunionio/onecloud-base:v0.3.5
+FROM registry.cn-beijing.aliyuncs.com/yunionio/onecloud-base:v3.22.2-0
 
-RUN mkdir -p /yunionos/x86_64 && mkdir -p /yunionos/aarch64
+RUN mkdir -p /yunionos/x86_64 && mkdir -p /yunionos/aarch64 && mkdir -p /yunionos/riscv64
 
 # ADD x86_64 kernel and initramfs
 ADD ./output_bundle_vm/kernel /yunionos/x86_64
@@ -9,6 +9,10 @@ ADD ./output_bundle_vm/initramfs /yunionos/x86_64
 # ADD arm64 kernel and initramfs
 ADD ./output_bundle_arm64_vm/kernel /yunionos/aarch64
 ADD ./output_bundle_arm64_vm/initramfs /yunionos/aarch64
+
+# ADD riscv64 kernel and initramfs
+ADD ./output_bundle_riscv64_vm/kernel /yunionos/riscv64
+ADD ./output_bundle_riscv64_vm/initramfs /yunionos/riscv64
 
 # ADD syslinux firmwares
 ADD ./output_bundle/isolinux.bin /yunionos/x86_64

@@ -20,7 +20,7 @@ Usage: ${0##*/} [-e EXTRA_MODULES_DIR] rootfs.tar kpkg.deb output_dir [iso|pxe] 
    [re]Bundle a buildroot rootfs into a mini-cloud image
 
    Example:
-    ${0##*/} [-e EXTRA_MODULES_DIR] [-f firmware_pkg] [-a] [-r REMOVE_FILES_LIST_FILE] rootfs.tar linux-image-*-virtuaal*.deb build-output/ [iso|pxe]
+    ${0##*/} [-e EXTRA_MODULES_DIR] [-f firmware_pkg] [-a] [-r REMOVE_FILES_LIST_FILE] rootfs.tar linux-image-*-virtual*.deb build-output/ [iso|pxe]
 EOF
 }
 bad_Usage() { Usage 1>&2; fail "$@"; }
@@ -205,15 +205,15 @@ if [ -n "$extra_modules_dir" ]; then
    	  fail "failed to copy extract modules to $dst_mod_dir"
 fi
 
-find ${kernel_d} -type f -name '*.ko.xz' | xargs xz -d
-find ${kernel_d} -type f -name '*.ko.zst' | xargs unzstd
+find ${kernel_d} -type f -name '*.ko.xz' -exec xz -d {} +
+find ${kernel_d} -type f -name '*.ko.zst' -exec unzstd {} +
 
 depmod -a --basedir "${kernel_d}" "${kver}" ||
 	fail "failed to run depmod"
 
 ls "${kernel_d}/lib/modules/${kver}/"
 
-if [ ! -x "${kernel_d}/lib/modules/${kver}/modules.builtin" ]; then
+if [ ! -f "${kernel_d}/lib/modules/${kver}/modules.builtin" ]; then
     echo "modules.builtin is missing"
     touch "${kernel_d}/lib/modules/${kver}/modules.builtin"
 fi

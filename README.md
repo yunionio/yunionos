@@ -42,6 +42,9 @@ $ make docker-buildroot
 # 制作 arm64 rootfs
 $ make docker-buildroot-arm64
 
+# 制作 risc-v rootfs
+$ make docker-buildroot-riscv64
+
 # 查看制作好的镜像
 $ ls ./output/rootfs.tar
 ```
@@ -60,6 +63,9 @@ $ make menuconfig
 
 # 如果是要进入 arm64 容器
 $ TARGET_ARCH=aarch64 ./scripts/buildroot-run.sh
+
+# 如果是要进入 risc-v 容器
+$ TARGET_ARCH=riscv64 ./scripts/buildroot-run.sh
 
 # 然后修改完配置后保存到容器里面的 /tmp/config 
 # 回到容器外, 用 docker cp 把对应的配置拷贝主来
@@ -81,6 +87,7 @@ $ git diff
 ```bash
 $ make download-kernel-amd64-6-deb
 $ make download-kernel-arm6-deb
+$ make download-kernel-risc-6-deb
 
 $ ls linux-image-6
 linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
@@ -96,7 +103,10 @@ $ make docker-bundle
 # bundle arm64 物理机 pxe 启动的 initramfs
 $ make docker-bundle-arm64
 
-# bundle x86_64 和arm64 轻量虚拟机的 initramfs
+# bundle risc-v 物理机 pxe 启动的 initramfs
+$ make docker-bundle-riscv64
+
+# bundle x86_64, risc-v 和 arm64 轻量虚拟机的 initramfs
 $ make docker-bundle-vm
 ```
 
@@ -106,13 +116,17 @@ $ make docker-bundle-vm
 - output_bundle_vm: x86_64 轻量级虚拟机启动
 - output_bundle_arm64: aarch64 物理机 pxe 启动
 - output_bundle_arm64_vm: aarch64 轻量级虚拟机启动
+- output_bundle_riscv64: risc-v 物理机 pxe 启动
+- output_bundle_riscv64_vm: risc-v 轻量级虚拟机启动
 
 ```bash
 $ ls -alh output_bundle*/initramfs
--rw-r--r-- 1 root root 71M Dec 14 14:03 output_bundle/initramfs
--rw-r--r-- 1 root root 69M Dec 14 13:19 output_bundle_arm64/initramfs
--rw-r--r-- 1 root root 43M Dec 14 13:37 output_bundle_arm64_vm/initramfs
--rw-r--r-- 1 root root 45M Dec 14 13:36 output_bundle_vm/initramfs
+-rw-r--r-- 1 root root 78M Nov 10 10:28 output_bundle/initramfs
+-rw-r--r-- 1 root root 74M Nov  8 13:15 output_bundle_arm64/initramfs
+-rw-r--r-- 1 root root 33M Nov 10 10:32 output_bundle_arm64_vm/initramfs
+-rw-r--r-- 1 root root 51M Nov  8 13:07 output_bundle_riscv64/initramfs
+-rw-r--r-- 1 root root 33M Nov 10 10:38 output_bundle_riscv64_vm/initramfs
+-rw-r--r-- 1 root root 36M Nov 10 10:31 output_bundle_vm/initramfs
 ```
 
 ### 将 initramfs 做成 yunionos 容器镜像
