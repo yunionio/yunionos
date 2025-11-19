@@ -21,7 +21,7 @@
 # ./run.sh make
 set -e
 
-BUILDROOT_VERSION=2021.08.2
+BUILDROOT_VERSION=2025.05.3
 BUILDROOT_DIR=/root/buildroot
 BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-1"
 TARGET_ARCH=${TARGET_ARCH:-x86_64}
@@ -30,9 +30,13 @@ OUTPUT_HOST_DIR=output
 
 BUILDROOT_CONFIG=rootfs-x86_64.$BUILDROOT_VERSION-0.conf
 
+
 if [ $TARGET_ARCH == "aarch64" ]; then
     BUILDROOT_CONFIG=rootfs-aarch64.$BUILDROOT_VERSION-0.conf
     OUTPUT_HOST_DIR=output_arm64
+elif [ $TARGET_ARCH == "riscv64" ]; then
+    BUILDROOT_CONFIG=rootfs-riscv64.$BUILDROOT_VERSION-0.conf
+    OUTPUT_HOST_DIR=output_riscv64
 fi
 
 mkdir -p $OUTPUT_HOST_DIR
@@ -53,8 +57,11 @@ cp $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809 $(pwd)/$OUTPUT_HOST_DIR/
     # -v $(pwd)/output:$OUTPUT_DIR
     # ${BUILDROOT_IMG}"
 
+# FORCE_UNSAFE_CONFIGURE=1 避免 buildroot 编译时出现报错: configure: error: you should not run configure as root (set FORCE_UNSAFE_CONFIGURE=1 in environment to bypass this check)
+
 DOCKER_RUN="docker run
     --rm
+    --env FORCE_UNSAFE_CONFIGURE=1
     -ti
     --network host
     -v $HOST_BUILDROOT_CONF_DIR/$BUILDROOT_CONFIG:/root/buildroot/.config
@@ -63,7 +70,7 @@ DOCKER_RUN="docker run
     ${BUILDROOT_IMG}"
 
 make() {
-    echo "make O=$OUTPUT_DIR"
+    echo "make -j 8 O=$OUTPUT_DIR"
 }
 
 echo $DOCKER_RUN
