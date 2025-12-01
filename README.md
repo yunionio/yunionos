@@ -135,10 +135,10 @@ $ ls -alh output_bundle*/initramfs
 
 ```bash
 # 给物理机的镜像
-$ make docker-yunionos-image
+$ make docker-yunionos-image-4.0
 
 # 给虚拟机的镜像
-$ make docker-yunionos-image-vm
+$ make docker-yunionos-image-vm-4.0
 ```
 
 ### 将 initramfs 做成 yunion-rootfs 镜像
