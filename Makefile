@@ -1,7 +1,7 @@
 BUILD_IMG = "yunionos-build-env:latest"
 REGISTRY = "registry.cn-beijing.aliyuncs.com/yunionio"
 BUILD_ROOT_VERSION = "2025.05.3"
-BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-3
+BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-1
 platform?=linux/amd64,linux/arm64,linux/riscv64
 
 
@@ -18,9 +18,7 @@ KERNEL_ARM_6_DEB ?= linux-image-6.17.7+deb14+1-arm64_6.17.7-2_arm64.deb
 
 KERNEL_AMD64_6_DEB ?= linux-image-6.17.7+deb14+1-amd64_6.17.7-2_amd64.deb
 
-KERNEL_RISC_6_DEB ?= linux-image-6.12.43+deb13-riscv64_6.12.43-1_riscv64.deb
-
-KERNEL_MODULES_RISC_6_DEB ?= linux-image-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
+KERNEL_RISC_6_DEB ?= linux-image-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
 
 KERNEL_MODULES_RISC_6_DEB ?= linux-modules-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
 
@@ -81,10 +79,10 @@ bundle-pxe-arm64-vm: download-debian-firmware download-kernel-arm-6-deb
 	ARCH=aarch64 $(BUNDLE_VM_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64_VM) pxe
 
 bundle-pxe-riscv64: download-debian-firmware download-kernel-risc-6-deb
-	ARCH=riscv64 $(BUNDLE_BM_CMD) ./output/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
+	ARCH=riscv64 $(BUNDLE_BM_CMD) ./output_riscv64/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
 
 bundle-pxe-riscv64-vm: download-debian-firmware download-kernel-risc-6-deb
-	ARCH=riscv64 $(BUNDLE_VM_CMD) ./output/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64_VM) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
+	ARCH=riscv64 $(BUNDLE_VM_CMD) ./output_riscv64/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64_VM) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
 
 docker-bundle:
 	./scripts/bundle-run.sh
@@ -129,7 +127,7 @@ docker-yunionos-image-vm:
 	docker buildx build --platform $(platform) --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_VM) -f ./Dockerfile.yunionos-vm .
 
-YUNIONOS_VERSION_4.0 = "v4.0.0-20251118.0"
+YUNIONOS_VERSION_4.0 = "v4.0.0-20251201.0"
 YUNIONOS_VERSION_VM_4.0 = $(YUNIONOS_VERSION_4.0)-vm
 
 docker-yunionos-image-4.0:
