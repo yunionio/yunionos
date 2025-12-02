@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:2025.05.3-1"
+BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:2025.05.3-5"
 
 TARGET_ARCH=${TARGET_ARCH:-x86_64}
 FOR_VM=${FOR_VM:-false}
