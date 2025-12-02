@@ -23,16 +23,16 @@ set -e
 
 BUILDROOT_VERSION=2025.05.3
 BUILDROOT_DIR=/root/buildroot
-BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-1"
-TARGET_ARCH=${TARGET_ARCH:-x86_64}
+BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-4"
+TARGET_ARCH=${TARGET_ARCH:-amd64}
 OUTPUT_DIR=/buildroot_output
 OUTPUT_HOST_DIR=output
 
-BUILDROOT_CONFIG=rootfs-x86_64.$BUILDROOT_VERSION-0.conf
+BUILDROOT_CONFIG=rootfs-amd64.$BUILDROOT_VERSION-0.conf
 
 
 if [ $TARGET_ARCH == "aarch64" ]; then
-    BUILDROOT_CONFIG=rootfs-aarch64.$BUILDROOT_VERSION-0.conf
+    BUILDROOT_CONFIG=rootfs-arm64.$BUILDROOT_VERSION-0.conf
     OUTPUT_HOST_DIR=output_arm64
 elif [ $TARGET_ARCH == "riscv64" ]; then
     BUILDROOT_CONFIG=rootfs-riscv64.$BUILDROOT_VERSION-0.conf
