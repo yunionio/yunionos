@@ -1,7 +1,7 @@
 BUILD_IMG = "yunionos-build-env:latest"
 REGISTRY = "registry.cn-beijing.aliyuncs.com/yunionio"
 BUILD_ROOT_VERSION = "2025.05.3"
-BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-4
+BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-5
 platform?=linux/amd64,linux/arm64,linux/riscv64
 
 
@@ -118,7 +118,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v4.0.0-20251202.0"
+YUNIONOS_VERSION = "v4.0.0-20251202.3"
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:
