@@ -118,7 +118,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v3.10.12-20251030.1"
+YUNIONOS_VERSION = "v4.0.0-20251202.0"
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:
@@ -129,20 +129,7 @@ docker-yunionos-image-vm:
 	docker buildx build --platform $(platform) --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_VM) -f ./Dockerfile.yunionos-vm .
 
-YUNIONOS_VERSION_4.0 = "v4.0.0-20251202.0"
-YUNIONOS_VERSION_VM_4.0 = $(YUNIONOS_VERSION_4.0)-vm
-
-docker-yunionos-image-4.0:
-	docker buildx build --platform $(platform) --push \
-		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_4.0) -f ./Dockerfile.yunionos .
-
-docker-yunionos-image-4.0-vm:
-	docker buildx build --platform $(platform) --push \
-		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_VM_4.0) -f ./Dockerfile.yunionos-vm .
-
 docker-yunionos-image-all: docker-buildroot docker-buildroot-arm64 docker-buildroot-riscv64 docker-bundle-all docker-yunionos-image docker-yunionos-image-vm
-
-docker-yunionos-image-all-4.0: docker-buildroot docker-buildroot-arm64 docker-buildroot-riscv64 docker-bundle-all docker-yunionos-image-4.0 docker-yunionos-image-4.0-vm
 
 extract-bundle-rootfs:
 	sudo make -C images extract-bundle-rootfs-amd64
