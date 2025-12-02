@@ -14,15 +14,15 @@ BUNDLE_OUTPUT_DIR_ARM64_VM = $(CURDIR)/output_bundle_arm64_vm
 BUNDLE_OUTPUT_DIR_RISC64 = $(CURDIR)/output_bundle_riscv64
 BUNDLE_OUTPUT_DIR_RISC64_VM = $(CURDIR)/output_bundle_riscv64_vm
 
-KERNEL_ARM_6_DEB ?= linux-image-6.17.7+deb14+1-arm64_6.17.7-2_arm64.deb
+KERNEL_ARM_6_DEB ?= linux-image-6.1.0-40-arm64_6.1.153-1_arm64.deb
 
-KERNEL_AMD64_6_DEB ?= linux-image-6.17.7+deb14+1-amd64_6.17.7-2_amd64.deb
+KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-40-amd64_6.1.153-1_amd64.deb
 
 KERNEL_RISC_6_DEB ?= linux-image-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
 
 KERNEL_MODULES_RISC_6_DEB ?= linux-modules-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
 
-DEBIAN_FIRMWARE_DEB ?= firmware-bnx2x_20251021-1_all.deb
+DEBIAN_FIRMWARE_DEB ?= firmware-bnx2x_20251111-1_all.deb
 
 $(DEBIAN_FIRMWARE_DEB):
 	wget -c https://mirrors.aliyun.com/debian/pool/non-free-firmware/f/firmware-nonfree/$(DEBIAN_FIRMWARE_DEB)
@@ -62,7 +62,7 @@ docker-buildroot-arm64:
 docker-buildroot-riscv64:
 	TARGET_ARCH=riscv64 ./scripts/buildroot-run.sh make
 
-BUNDLE_BM_CMD = ./bin/mosbundle -f ./firmware-bnx2x_20251021-1_all.deb  -r ./remove_files_list.txt
+BUNDLE_BM_CMD = ./bin/mosbundle -f ./$(DEBIAN_FIRMWARE_DEB)  -r ./remove_files_list.txt
 
 BUNDLE_VM_CMD = ./bin/mosbundle -r ./vm_remove_files_list.txt -m ./vm_etc_modules
 
@@ -84,7 +84,7 @@ bundle-pxe-riscv64: download-debian-firmware download-kernel-risc-6-deb
 bundle-pxe-riscv64-vm: download-debian-firmware download-kernel-risc-6-deb
 	ARCH=riscv64 $(BUNDLE_VM_CMD) ./output_riscv64/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64_VM) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
 
-docker-bundle:
+docker-bundle-x86_64:
 	./scripts/bundle-run.sh
 
 docker-bundle-arm64:
@@ -104,7 +104,9 @@ docker-bundle-vm-riscv64:
 
 docker-bundle-vm: docker-bundle-vm-x86_64 docker-bundle-vm-arm64 docker-bundle-vm-riscv64
 
-docker-bundle-all: docker-bundle docker-bundle-arm64 docker-bundle-riscv64 docker-bundle-vm
+docker-bundle: docker-bundle-x86_64 docker-bundle-arm64 docker-bundle-riscv64
+
+docker-bundle-all: docker-bundle docker-bundle-vm
 
 make-rpm:
 	./bin/makerpm $(BUNDLE_OUTPUT_DIR) $(BUNDLE_OUTPUT_DIR_ARM64)
@@ -127,20 +129,20 @@ docker-yunionos-image-vm:
 	docker buildx build --platform $(platform) --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_VM) -f ./Dockerfile.yunionos-vm .
 
-YUNIONOS_VERSION_4.0 = "v4.0.0-20251201.0"
+YUNIONOS_VERSION_4.0 = "v4.0.0-20251202.0"
 YUNIONOS_VERSION_VM_4.0 = $(YUNIONOS_VERSION_4.0)-vm
 
 docker-yunionos-image-4.0:
 	docker buildx build --platform $(platform) --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_4.0) -f ./Dockerfile.yunionos .
 
-docker-yunionos-image-vm-4.0:
+docker-yunionos-image-4.0-vm:
 	docker buildx build --platform $(platform) --push \
 		-t $(REGISTRY)/yunionos:$(YUNIONOS_VERSION_VM_4.0) -f ./Dockerfile.yunionos-vm .
 
 docker-yunionos-image-all: docker-buildroot docker-buildroot-arm64 docker-buildroot-riscv64 docker-bundle-all docker-yunionos-image docker-yunionos-image-vm
 
-docker-yunionos-image-all-4.0: docker-buildroot docker-buildroot-arm64 docker-buildroot-riscv64 docker-bundle-all docker-yunionos-image-4.0 docker-yunionos-image-vm-4.0
+docker-yunionos-image-all-4.0: docker-buildroot docker-buildroot-arm64 docker-buildroot-riscv64 docker-bundle-all docker-yunionos-image-4.0 docker-yunionos-image-4.0-vm
 
 extract-bundle-rootfs:
 	sudo make -C images extract-bundle-rootfs-amd64
