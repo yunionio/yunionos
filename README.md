@@ -98,7 +98,7 @@ linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
 
 ```bash
 # bundle x86_64 物理机 pxe 启动的 initramfs
-$ make docker-bundle
+$ make docker-bundle-x86_64
 
 # bundle arm64 物理机 pxe 启动的 initramfs
 $ make docker-bundle-arm64
@@ -135,10 +135,10 @@ $ ls -alh output_bundle*/initramfs
 
 ```bash
 # 给物理机的镜像
-$ make docker-yunionos-image-4.0
+$ make docker-yunionos-image
 
 # 给虚拟机的镜像
-$ make docker-yunionos-image-vm-4.0
+$ make docker-yunionos-image-vm
 ```
 
 ### 将 initramfs 做成 yunion-rootfs 镜像
