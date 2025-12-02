@@ -1,7 +1,7 @@
 BUILD_IMG = "yunionos-build-env:latest"
 REGISTRY = "registry.cn-beijing.aliyuncs.com/yunionio"
 BUILD_ROOT_VERSION = "2025.05.3"
-BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-1
+BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-4
 platform?=linux/amd64,linux/arm64,linux/riscv64
 
 
@@ -51,7 +51,7 @@ pxelinux-update:
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.pxelinux --output ./pxelinux .
 
 buildroot-image:
-	docker buildx build --platform $(platform) -t $(BUILD_ROOT_IMG) -f Dockerfile.buildroot-$(BUILD_ROOT_VERSION) . --push
+	docker buildx build --platform $(platform) --build-arg FORCE_UNSAFE_CONFIGURE=1 -t $(BUILD_ROOT_IMG) -f Dockerfile.buildroot-$(BUILD_ROOT_VERSION) . --push
 
 docker-buildroot:
 	./scripts/buildroot-run.sh make

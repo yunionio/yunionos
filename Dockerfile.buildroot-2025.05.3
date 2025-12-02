@@ -52,11 +52,16 @@ WORKDIR /root/buildroot
 
 ENV O=/buildroot_output
 
-# ADD ./rootfs/buildroot_conf/rootfs.201702.11-4.conf /root/buildroot/.config
-# ADD ./rootfs/buildroot_conf/busybox-config-20180809 /root/buildroot/
+ARG TARGETARCH
 
-#VOLUME /root/buildroot/dl
-#VOLUME /buildroot_output
+ADD ./rootfs/buildroot_conf/rootfs-${TARGETARCH}.2025.05.3-0.conf /root/buildroot/.config
+ADD ./rootfs/buildroot_conf/busybox-config-20180809 /root/buildroot/
+
+ARG FORCE_UNSAFE_CONFIGURE=1
+
+RUN make source
+
+RUN rm -rf output && rm -rf .config && rm -rf busybox-config-20180809
 
 RUN apt install -y rpm2cpio kmod
 
