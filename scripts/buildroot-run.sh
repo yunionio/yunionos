@@ -23,7 +23,7 @@ set -e
 
 BUILDROOT_VERSION=2025.05.3
 BUILDROOT_DIR=/root/buildroot
-BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-4"
+BUILDROOT_IMG="registry.cn-beijing.aliyuncs.com/yunionio/buildroot:$BUILDROOT_VERSION-5"
 TARGET_ARCH=${TARGET_ARCH:-amd64}
 OUTPUT_DIR=/buildroot_output
 OUTPUT_HOST_DIR=output
