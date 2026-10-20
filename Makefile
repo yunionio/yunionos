@@ -7,6 +7,10 @@ platform?=linux/amd64,linux/arm64,linux/riscv64
 
 BUILD_ROOT_OUTPUT_DIR = $(CURDIR)/output
 BUILD_ROOT_OUTPUT_DIR_ARM64 = $(CURDIR)/output_arm64
+BUILD_ROOT_OUTPUT_DIR_RISCV64 = $(CURDIR)/output_riscv64
+ROOTFS_AMD64 = $(BUILD_ROOT_OUTPUT_DIR)/images/rootfs.tar
+ROOTFS_ARM64 = $(BUILD_ROOT_OUTPUT_DIR_ARM64)/images/rootfs.tar
+ROOTFS_RISCV64 = $(BUILD_ROOT_OUTPUT_DIR_RISCV64)/images/rootfs.tar
 BUNDLE_OUTPUT_DIR = $(CURDIR)/output_bundle
 BUNDLE_OUTPUT_DIR_VM = $(CURDIR)/output_bundle_vm
 BUNDLE_OUTPUT_DIR_ARM64 = $(CURDIR)/output_bundle_arm64
@@ -14,15 +18,17 @@ BUNDLE_OUTPUT_DIR_ARM64_VM = $(CURDIR)/output_bundle_arm64_vm
 BUNDLE_OUTPUT_DIR_RISC64 = $(CURDIR)/output_bundle_riscv64
 BUNDLE_OUTPUT_DIR_RISC64_VM = $(CURDIR)/output_bundle_riscv64_vm
 
-KERNEL_ARM_6_DEB ?= linux-image-6.1.0-40-arm64_6.1.153-1_arm64.deb
+KERNEL_ARM_6_DEB ?= linux-image-6.1.0-50-arm64_6.1.176-1_arm64.deb
 
-KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-40-amd64_6.1.153-1_amd64.deb
+KERNEL_AMD64_6_DEB ?= linux-image-6.1.0-50-amd64_6.1.176-1_amd64.deb
 
-KERNEL_RISC_6_DEB ?= linux-image-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
+KERNEL_RISC_RPM ?= linux-core-7.2.6-1.0_555.2.or.riscv64.rpm
 
-KERNEL_MODULES_RISC_6_DEB ?= linux-modules-6.8.0-60-generic_6.8.0-60.63.1_riscv64.deb
+KERNEL_MODULES_RISC_RPM ?= linux-modules-7.2.6-1.0_555.2.or.riscv64.rpm
 
-DEBIAN_FIRMWARE_DEB ?= firmware-bnx2x_20251111-1_all.deb
+OPENRUYI_RISCV_REPO ?= https://repo.build.openruyi.cn/openruyi/riscv64/riscv64
+
+DEBIAN_FIRMWARE_DEB ?= firmware-bnx2x_20260916-1_all.deb
 
 $(DEBIAN_FIRMWARE_DEB):
 	wget -c https://mirrors.aliyun.com/debian/pool/non-free-firmware/f/firmware-nonfree/$(DEBIAN_FIRMWARE_DEB)
@@ -39,13 +45,13 @@ $(KERNEL_AMD64_6_DEB):
 
 download-kernel-amd64-6-deb: $(KERNEL_AMD64_6_DEB)
 
-$(KERNEL_RISC_6_DEB):
-	wget -c https://mirrors.aliyun.com/ubuntu-ports/pool/main/l/linux-riscv/$(KERNEL_RISC_6_DEB)
+$(KERNEL_RISC_RPM):
+	wget -c $(OPENRUYI_RISCV_REPO)/$(KERNEL_RISC_RPM)
 
-$(KERNEL_MODULES_RISC_6_DEB):
-	wget -c https://mirrors.aliyun.com/ubuntu-ports/pool/main/l/linux-riscv/$(KERNEL_MODULES_RISC_6_DEB)
+$(KERNEL_MODULES_RISC_RPM):
+	wget -c $(OPENRUYI_RISCV_REPO)/$(KERNEL_MODULES_RISC_RPM)
 
-download-kernel-risc-6-deb: $(KERNEL_RISC_6_DEB) $(KERNEL_MODULES_RISC_6_DEB)
+download-kernel-risc: $(KERNEL_RISC_RPM) $(KERNEL_MODULES_RISC_RPM)
 
 pxelinux-update:
 	DOCKER_BUILDKIT=1 docker build -f Dockerfile.pxelinux --output ./pxelinux .
@@ -66,40 +72,53 @@ BUNDLE_BM_CMD = ./bin/mosbundle -f ./$(DEBIAN_FIRMWARE_DEB)  -r ./remove_files_l
 
 BUNDLE_VM_CMD = ./bin/mosbundle -r ./vm_remove_files_list.txt -m ./vm_etc_modules
 
-bundle-pxe: download-debian-firmware download-kernel-amd64-6-deb
-	 $(BUNDLE_BM_CMD) -e ./extra_modules ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR) pxe
+# rootfs is built by docker-buildroot*; do not rebuild here (slow / separate container)
+$(ROOTFS_AMD64):
+	@echo "ERROR: $@ missing. Run: make docker-buildroot" >&2
+	@false
 
-bundle-pxe-vm: download-debian-firmware download-kernel-amd64-6-deb
-	 $(BUNDLE_VM_CMD) ./output/images/rootfs.tar ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR_VM) pxe
+$(ROOTFS_ARM64):
+	@echo "ERROR: $@ missing. Run: make docker-buildroot-arm64" >&2
+	@false
 
-bundle-pxe-arm64: download-debian-firmware download-kernel-arm-6-deb
-	ARCH=aarch64 $(BUNDLE_BM_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64) pxe
+$(ROOTFS_RISCV64):
+	@echo "ERROR: $@ missing. Run: make docker-buildroot-riscv64" >&2
+	@false
 
-bundle-pxe-arm64-vm: download-debian-firmware download-kernel-arm-6-deb
-	ARCH=aarch64 $(BUNDLE_VM_CMD) ./output_arm64/images/rootfs.tar ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64_VM) pxe
+bundle-pxe: download-debian-firmware download-kernel-amd64-6-deb $(ROOTFS_AMD64)
+	 $(BUNDLE_BM_CMD) -e ./extra_modules $(ROOTFS_AMD64) ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR) pxe
 
-bundle-pxe-riscv64: download-debian-firmware download-kernel-risc-6-deb
-	ARCH=riscv64 $(BUNDLE_BM_CMD) ./output_riscv64/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
+bundle-pxe-vm: download-debian-firmware download-kernel-amd64-6-deb $(ROOTFS_AMD64)
+	 $(BUNDLE_VM_CMD) $(ROOTFS_AMD64) ./$(KERNEL_AMD64_6_DEB) $(BUNDLE_OUTPUT_DIR_VM) pxe
 
-bundle-pxe-riscv64-vm: download-debian-firmware download-kernel-risc-6-deb
-	ARCH=riscv64 $(BUNDLE_VM_CMD) ./output_riscv64/images/rootfs.tar ./$(KERNEL_RISC_6_DEB) $(BUNDLE_OUTPUT_DIR_RISC64_VM) pxe ./$(KERNEL_MODULES_RISC_6_DEB)
+bundle-pxe-arm64: download-debian-firmware download-kernel-arm-6-deb $(ROOTFS_ARM64)
+	ARCH=aarch64 $(BUNDLE_BM_CMD) $(ROOTFS_ARM64) ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64) pxe
 
-docker-bundle-x86_64:
+bundle-pxe-arm64-vm: download-debian-firmware download-kernel-arm-6-deb $(ROOTFS_ARM64)
+	ARCH=aarch64 $(BUNDLE_VM_CMD) $(ROOTFS_ARM64) ./$(KERNEL_ARM_6_DEB) $(BUNDLE_OUTPUT_DIR_ARM64_VM) pxe
+
+bundle-pxe-riscv64: download-debian-firmware download-kernel-risc $(ROOTFS_RISCV64)
+	ARCH=riscv64 $(BUNDLE_BM_CMD) -m ./src_riscv64/etc/modules $(ROOTFS_RISCV64) ./$(KERNEL_RISC_RPM) $(BUNDLE_OUTPUT_DIR_RISC64) pxe ./$(KERNEL_MODULES_RISC_RPM)
+
+bundle-pxe-riscv64-vm: download-debian-firmware download-kernel-risc $(ROOTFS_RISCV64)
+	ARCH=riscv64 ./bin/mosbundle -r ./vm_remove_files_list.txt -m ./vm_etc_modules_riscv64 $(ROOTFS_RISCV64) ./$(KERNEL_RISC_RPM) $(BUNDLE_OUTPUT_DIR_RISC64_VM) pxe ./$(KERNEL_MODULES_RISC_RPM)
+
+docker-bundle-x86_64: $(ROOTFS_AMD64)
 	./scripts/bundle-run.sh
 
-docker-bundle-arm64:
+docker-bundle-arm64: $(ROOTFS_ARM64)
 	TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
 
-docker-bundle-riscv64:
+docker-bundle-riscv64: $(ROOTFS_RISCV64)
 	TARGET_ARCH=riscv64 ./scripts/bundle-run.sh
 
-docker-bundle-vm-x86_64:
+docker-bundle-vm-x86_64: $(ROOTFS_AMD64)
 	FOR_VM=true ./scripts/bundle-run.sh
 
-docker-bundle-vm-arm64:
+docker-bundle-vm-arm64: $(ROOTFS_ARM64)
 	FOR_VM=true TARGET_ARCH=aarch64 ./scripts/bundle-run.sh
 
-docker-bundle-vm-riscv64:
+docker-bundle-vm-riscv64: $(ROOTFS_RISCV64)
 	FOR_VM=true TARGET_ARCH=riscv64 ./scripts/bundle-run.sh
 
 docker-bundle-vm: docker-bundle-vm-x86_64 docker-bundle-vm-arm64 docker-bundle-vm-riscv64
@@ -118,7 +137,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v4.0.0-20251203.0"
+YUNIONOS_VERSION = "v4.1.0-20261020.0"
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:

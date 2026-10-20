@@ -86,12 +86,14 @@ $ git diff
 
 ```bash
 $ make download-kernel-amd64-6-deb
-$ make download-kernel-arm6-deb
-$ make download-kernel-risc-6-deb
+$ make download-kernel-arm-6-deb
+$ make download-kernel-risc
 
-$ ls linux-image-6
-linux-image-6.1.0-13-amd64_6.1.55-1_amd64.deb
-linux-image-6.1.0-13-arm64_6.1.55-1_arm64.deb
+$ ls linux-image-*.deb linux-core-*.rpm linux-modules-*.rpm
+linux-image-6.1.0-50-amd64_6.1.176-1_amd64.deb
+linux-image-6.1.0-50-arm64_6.1.176-1_arm64.deb
+linux-core-7.2.6-1.0_555.2.or.riscv64.rpm
+linux-modules-7.2.6-1.0_555.2.or.riscv64.rpm
 ```
 
 然后执行下面的命令进行 bundle：
