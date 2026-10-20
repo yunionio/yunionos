@@ -1,18 +1,19 @@
 FROM registry.cn-beijing.aliyuncs.com/yunionio/onecloud-base:v3.22.2-0
 
-RUN mkdir -p /yunionos/x86_64 && mkdir -p /yunionos/aarch64 && mkdir -p /yunionos/riscv64
+# No RUN here: multi-arch build (esp. riscv64) would need QEMU/binfmt for RUN.
+# ADD creates destination directories automatically.
 
 # ADD x86_64 kernel and initramfs
-ADD ./output_bundle/kernel /yunionos/x86_64
-ADD ./output_bundle/initramfs /yunionos/x86_64
+ADD ./output_bundle/kernel /yunionos/x86_64/
+ADD ./output_bundle/initramfs /yunionos/x86_64/
 
 # ADD arm64 kernel and initramfs
-ADD ./output_bundle_arm64/kernel /yunionos/aarch64
-ADD ./output_bundle_arm64/initramfs /yunionos/aarch64
+ADD ./output_bundle_arm64/kernel /yunionos/aarch64/
+ADD ./output_bundle_arm64/initramfs /yunionos/aarch64/
 
 # ADD riscv64 kernel and initramfs
-ADD ./output_bundle_riscv64/kernel /yunionos/riscv64
-ADD ./output_bundle_riscv64/initramfs /yunionos/riscv64
+ADD ./output_bundle_riscv64/kernel /yunionos/riscv64/
+ADD ./output_bundle_riscv64/initramfs /yunionos/riscv64/
 
 # ADD syslinux firmwares
 ADD ./output_bundle/isolinux.bin /yunionos/x86_64

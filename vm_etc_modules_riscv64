@@ -1,0 +1,13 @@
+#ip_tables
+sg
+ata_piix
+
+# nls
+nls_iso8859-1
+
+# devicemap & lvm & multi-disk
+dm-mod
+raid0
+raid10
+raid1
+raid456

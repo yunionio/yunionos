@@ -106,10 +106,15 @@ TEMP_D=$(mktemp -d "${TMPDIR:-/tmp}/.${0##*/}.XXXXXX") ||
 	fail "failed to make tempd"
 trap cleanup EXIT
 
-mkdir -p "${out_d_in}" && out_d=$(readlink -f "${out_d_in}") &&
-	rootfs=$(readlink -f "${rootfs_in}") &&
-	kpkg=$(readlink -f "${kpkg_in}") ||
-	fail "failed to get full path for input"
+mkdir -p "${out_d_in}" || fail "failed to create output dir ${out_d_in}"
+out_d=$(readlink -f "${out_d_in}") || fail "failed to resolve output dir ${out_d_in}"
+[ -f "${rootfs_in}" ] || fail "rootfs not found: ${rootfs_in} (build rootfs first, e.g. make docker-buildroot-riscv64)"
+rootfs=$(readlink -f "${rootfs_in}") || fail "failed to resolve rootfs ${rootfs_in}"
+[ -f "${kpkg_in}" ] || fail "kernel package not found: ${kpkg_in}"
+kpkg=$(readlink -f "${kpkg_in}") || fail "failed to resolve kernel package ${kpkg_in}"
+if [ -n "${kpkg_in2}" ]; then
+	[ -f "${kpkg_in2}" ] || fail "kernel modules package not found: ${kpkg_in2}"
+fi
 
 if [ "$src_type_in" == "pxe" ]; then
     out_kernel="${out_d}/kernel"
@@ -161,8 +166,16 @@ case $kpkg_in in
         ;;
     *.rpm)
         (rpm2cpio "${kpkg_in}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp) &&
-        (test -z "${kpkg_in2}" || (rpm2cpio "${kpkg_in}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp)) ||
+        (test -z "${kpkg_in2}" || (rpm2cpio "${kpkg_in2}" > "${kernel_d}/tmp" && cd "${kernel_d}" && cpio -idm -F tmp && rm -f tmp)) ||
 	    fail "failed to extract kernel to ${kernel_d}"
+
+        if test -d "${kernel_d}/usr/lib" && test ! -e "${kernel_d}/lib"; then
+            cp -rf "${kernel_d}/usr/lib" "${kernel_d}/lib"
+        fi
+        if test -d "${kernel_d}/usr/lib/modules" && test ! -e "${kernel_d}/lib/modules"; then
+            mkdir -p "${kernel_d}/lib"
+            cp -rf "${kernel_d}/usr/lib/modules" "${kernel_d}/lib/modules"
+        fi
         ;;
     *.pkg.tar.zst)
 		mkdir -p "${kernel_d}"
@@ -248,10 +261,18 @@ fi
 
 fi
 
-vmlinuz=$( cd "${kernel_d}" && [ -f boot/vmlinuz* ] &&
-	echo boot/vmlinuz* ) && echo "${vmlinuz}" >> "${kern_files}" &&
-	ln -sf "$vmlinuz" "$kernel_d/vmlinuz" && echo "vmlinuz" >> "$kern_files" ||
-	fail "no kernel (boot/vmlinuz*) found in ${kpkg_in}"
+vmlinuz=""
+if ( cd "${kernel_d}" && ls boot/vmlinuz* >/dev/null 2>&1 ); then
+	vmlinuz=$( cd "${kernel_d}" && ls boot/vmlinuz* | head -n1 )
+elif [ -f "${kernel_d}/lib/modules/${kver}/vmlinuz" ]; then
+	# openRuyi / some RPM layouts ship vmlinuz under lib/modules/<kver>/
+	vmlinuz="lib/modules/${kver}/vmlinuz"
+elif [ -f "${kernel_d}/boot/Image" ]; then
+	vmlinuz="boot/Image"
+fi
+[ -n "${vmlinuz}" ] || fail "no kernel (boot/vmlinuz*|lib/modules/${kver}/vmlinuz) found in ${kpkg_in}"
+echo "${vmlinuz}" >> "${kern_files}"
+ln -sf "$vmlinuz" "$kernel_d/vmlinuz" && echo "vmlinuz" >> "$kern_files"
 #echo "boot/config-$kver" >> "$kern_files"
 echo "lib/modules/$kver/modules.order" >> "$kern_files"
 echo "lib/modules/$kver/modules.builtin" >> "$kern_files"

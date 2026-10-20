@@ -1,0 +1,35 @@
+ipmi_msghandler
+ipmi_devintf
+ipmi_si
+usbserial
+megaraid_sas
+mpt3sas
+hpsa
+ixgbe
+igb
+e1000
+ice
+tg3
+bnx2
+bnx2x
+#ip_tables
+i40e
+sg
+# usb-storage
+ata_piix
+aacraid
+smartpqi
+bnxt_en
+
+# mellanox
+mlx4_core
+mlx4_en
+mlx5_core
+mlxfw
+
+# devicemap & lvm & multi-disk
+dm-mod
+raid0
+raid10
+raid1
+raid456
