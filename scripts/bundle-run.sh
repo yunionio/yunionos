@@ -25,9 +25,15 @@ if [[ $1 == "bash" ]]; then
     DEFAULT_CMD="bash"
 fi
 
+# Only allocate a TTY when stdin is a terminal (GitHub Actions has no TTY).
+DOCKER_TTY_OPTS="-i"
+if [ -t 0 ]; then
+    DOCKER_TTY_OPTS="-it"
+fi
+
 docker run \
     --rm \
-    -ti \
+    ${DOCKER_TTY_OPTS} \
     -v $(pwd):/yunionos \
     -w /yunionos \
     ${BUILDROOT_IMG} $DEFAULT_CMD

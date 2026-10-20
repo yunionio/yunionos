@@ -59,10 +59,16 @@ cp $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809 $(pwd)/$OUTPUT_HOST_DIR/
 
 # FORCE_UNSAFE_CONFIGURE=1 避免 buildroot 编译时出现报错: configure: error: you should not run configure as root (set FORCE_UNSAFE_CONFIGURE=1 in environment to bypass this check)
 
+# Only allocate a TTY when stdin is a terminal (GitHub Actions has no TTY).
+DOCKER_TTY_OPTS="-i"
+if [ -t 0 ]; then
+    DOCKER_TTY_OPTS="-it"
+fi
+
 DOCKER_RUN="docker run
     --rm
     --env FORCE_UNSAFE_CONFIGURE=1
-    -ti
+    ${DOCKER_TTY_OPTS}
     --network host
     -v $HOST_BUILDROOT_CONF_DIR/$BUILDROOT_CONFIG:/root/buildroot/.config
     -v $HOST_BUILDROOT_CONF_DIR/busybox-config-20180809:/root/buildroot/busybox-config-20180809

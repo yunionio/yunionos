@@ -1,7 +1,11 @@
 BUILD_IMG = "yunionos-build-env:latest"
-REGISTRY = "registry.cn-beijing.aliyuncs.com/yunionio"
+# Override REGISTRY for CI/Docker Hub push only, e.g.:
+#   make docker-yunionos-image REGISTRY=docker.io/yunion YUNIONOS_VERSION=v4.1.0-20261020.0
+# Buildroot tooling image stays on Aliyun regardless of REGISTRY.
+ALIYUN_REGISTRY = registry.cn-beijing.aliyuncs.com/yunionio
+REGISTRY ?= $(ALIYUN_REGISTRY)
 BUILD_ROOT_VERSION = "2025.05.3"
-BUILD_ROOT_IMG = $(REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-5
+BUILD_ROOT_IMG = $(ALIYUN_REGISTRY)/buildroot:$(BUILD_ROOT_VERSION)-5
 platform?=linux/amd64,linux/arm64,linux/riscv64
 
 
@@ -137,7 +141,7 @@ docker-make-rpm:
 		registry.cn-beijing.aliyuncs.com/yunionio/centos-build:1.1-4 \
 		/bin/bash -c "make -C /data make-rpm"
 
-YUNIONOS_VERSION = "v4.1.0-20261020.0"
+YUNIONOS_VERSION ?= v4.1.0-20261020.0
 YUNIONOS_VERSION_VM = $(YUNIONOS_VERSION)-vm
 
 docker-yunionos-image:
