@@ -169,3 +169,39 @@ pxelinux 目录下面是从 syslinux 拷贝过来的 pxe 启动固件，可以�
 ```bash
 $ make pxelinux-update
 ```
+
+### GitHub Actions 自动发布到 Docker Hub
+
+推送匹配 `v*` 的 git tag（或手动 `workflow_dispatch`）后，[`.github/workflows/release-yunionos.yml`](.github/workflows/release-yunionos.yml) 会全量构建 rootfs、bundle，并推送：
+
+- `docker.io/<namespace>/yunionos:<tag>`
+- `docker.io/<namespace>/yunionos:<tag>-vm`
+
+#### 仓库配置
+
+在 GitHub 仓库 Settings 中配置：
+
+| 类型 | 名称 | 说明 |
+|------|------|------|
+| Secret | `DOCKERHUB_USERNAME` | Docker Hub 用户名 |
+| Secret | `DOCKERHUB_TOKEN` | Docker Hub Access Token（需有 push 权限） |
+| Variable（可选） | `DOCKERHUB_NAMESPACE` | 镜像命名空间；未设置时默认用 `github.repository_owner` |
+
+Fork 验证示例（[`yunion/yunionos`](https://github.com/yunionio/yunionos)）：可不设 Variable，默认推到 `docker.io/yunion/yunionos:...`；正式仓可设 `DOCKERHUB_NAMESPACE=yunion`。
+
+#### 触发发版
+
+```bash
+# 与 Makefile 中版本对齐后打 tag 并推送
+git tag v4.1.0-20261020.0
+git push origin v4.1.0-20261020.0
+```
+
+也可在 Actions 页用 **Release yunionos to Docker Hub** → **Run workflow**，填写 version（如 `v4.1.0-20261020.0`）。
+
+本地等价推送命令：
+
+```bash
+make docker-yunionos-image REGISTRY=docker.io/yunion YUNIONOS_VERSION=v4.1.0-20261020.0
+make docker-yunionos-image-vm REGISTRY=docker.io/yunion YUNIONOS_VERSION=v4.1.0-20261020.0
+```
