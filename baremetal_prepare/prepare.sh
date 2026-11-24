@@ -25,24 +25,47 @@ function check_ip() {
     fi
 }
 
+function read_secret() {
+    local ch; SECRET=
+    printf "%-26s " "$1:"
+    while IFS= read -rsn1 ch; do
+        case $ch in
+            '') break ;;
+            $'\010'|$'\177') [[ $SECRET ]] && { SECRET=${SECRET%?}; printf '\b \b'; } ;;
+            *) SECRET+=$ch; printf "${C_D}*${C_0}" ;;
+        esac
+    done
+    echo
+}
+
 function getIpmiInfo(){
+    username=""
+    password1=""
+    no_ipmi=true
+
+    printf "%-26s [y/N]: " "Is IPMI available"
+    read -r has_ipmi
+    case "$has_ipmi" in
+        [Yy]|[Yy][Ee][Ss]) ;;
+        *)
+            info "Skip IPMI credential input"
+            return
+            ;;
+    esac
+
     info "****** Enter the IPMI username password ******"
 
-    printf "%-30s: " "Enter the IPMI username"
-    read username
+    printf "%-26s " "IPMI username:"; read -r username
 
-    printf "%-30s: " "Enter the IPMI password"
-    read -s password1
-    echo ""
-
-    printf "%-30s: " "Enter the IPMI password again"
-    read -s password2
-    echo ""
+    read_secret "IPMI password";       password1=$SECRET
+    read_secret "IPMI password again"; password2=$SECRET
 
     if [ "$password1" != "$password2" ]; then
         error "Password twice enter is not equal, exit..."
         exit 1
     fi
+
+    no_ipmi=false
 }
 
 function requires_root {
@@ -62,13 +85,19 @@ function confget() {
 
 function generate_post_data()
 {
+    if [ "$no_ipmi" = true ]; then
+cat <<EOF
+{"no_ipmi": true, "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME", "ssh_ip": "$ssh_ip"}
+EOF
+    else
 cat <<EOF
 {"username": "$username", "password": "$password1", "ssh_port": "$ssh_port", "ssh_password": "$ssh_password", "hostname": "$HOSTNAME", "ssh_ip": "$ssh_ip"}
 EOF
+    fi
 }
 
 function check_port() {
-    netstat -tlpn | grep "\b$1\b" 2>/dev/null 1>/dev/null
+    ss -ltnp 2>/dev/null | grep -qE ":$1([[:space:]]|$)"
 }
 
 function check_and_set_port() {
