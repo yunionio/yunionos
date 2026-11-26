@@ -171,6 +171,17 @@
                         ]
                 },
                 {
+                        "destination": "/hostfs",
+                        "type": "bind",
+                        "source": "/",
+                        "options": [
+                                "rbind",
+                                "rw",
+                                "nosuid",
+                                "nodev"
+                        ]
+                },
+                {
                         "destination": "/dev/pts",
                         "type": "devpts",
                         "source": "devpts",
